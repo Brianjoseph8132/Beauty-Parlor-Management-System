@@ -2,9 +2,9 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import About from './pages/About'
-import { Contact } from 'lucide-react'
 import SignUp from './pages/SignUp'
 import Hero from './components/Hero'
+import Contact from './pages/Contact'
 
 function App() {
   
