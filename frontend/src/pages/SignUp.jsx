@@ -1,9 +1,255 @@
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Sparkles } from "lucide-react";
+import salon from "../assets/images/salon1.jpeg";
+
 const SignUp = () => {
-    return ( 
-        <div>
-            SignUp
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    agreeToTerms: false,
+  });
+
+  const handleChange = (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({
+      ...formData,
+      [e.target.name]: value,
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Sign up submitted:", formData);
+    // Add your sign up logic here
+  };
+
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  };
+
+  return (
+    <div className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <img
+          src={salon}
+          alt="Sign up background"
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Sign Up Card */}
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 w-full max-w-md mt-10"
+      >
+        <div className="bg-[#272727]/80 backdrop-blur-md rounded-3xl p-8 sm:p-10 border border-[#D4AA7D]/30 shadow-2xl">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <motion.div
+              className="flex items-center gap-3"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Sparkles className="w-10 h-10 text-[#D4AA7D]" />
+              <h1 className="text-3xl font-bold text-[#EFD09E]">BPMS</h1>
+            </motion.div>
+          </div>
+
+          {/* Welcome Text */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#D4AA7D] mb-2">
+              Create Account
+            </h2>
+            <p className="text-[#EFD09E]/70">
+              Sign up to get started with BPMS
+            </p>
+          </div>
+
+          {/* Sign Up Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Full Name Field */}
+            <div>
+              <label
+                htmlFor="fullName"
+                className="block text-[#EFD09E] mb-2 font-medium text-sm"
+              >
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            {/* Email Field */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-[#EFD09E] mb-2 font-medium text-sm"
+              >
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                placeholder="Enter your email"
+              />
+            </div>
+
+            {/* Phone Field */}
+            <div>
+              <label
+                htmlFor="phone"
+                className="block text-[#EFD09E] mb-2 font-medium text-sm"
+              >
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                placeholder="Enter your mobile number"
+              />
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-[#EFD09E] mb-2 font-medium text-sm"
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                placeholder="Create a password"
+              />
+            </div>
+
+            {/* Confirm Password Field */}
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-[#EFD09E] mb-2 font-medium text-sm"
+              >
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                placeholder="Confirm your password"
+              />
+            </div>
+
+            {/* Terms & Conditions
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="agreeToTerms"
+                name="agreeToTerms"
+                checked={formData.agreeToTerms}
+                onChange={handleChange}
+                required
+                className="w-4 h-4 mt-1 rounded border-[#D4AA7D]/30 bg-[#EFD09E]/10 text-[#D4AA7D] focus:ring-[#D4AA7D] focus:ring-offset-0"
+              />
+              <label htmlFor="agreeToTerms" className="text-[#EFD09E]/80 text-sm cursor-pointer">
+                I agree to the{" "}
+                <a href="#" className="text-[#D4AA7D] hover:text-[#EFD09E] transition">
+                  Terms & Conditions
+                </a>{" "}
+                and{" "}
+                <a href="#" className="text-[#D4AA7D] hover:text-[#EFD09E] transition">
+                  Privacy Policy
+                </a>
+              </label>
+            </div> */}
+
+            {/* Submit Button */}
+            <motion.button
+              type="submit"
+              className="w-full bg-[#D4AA7D] text-[#272727] px-8 py-3.5 rounded-xl font-semibold text-lg hover:bg-[#EFD09E] transition"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Create Account
+            </motion.button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#D4AA7D]/30"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-[#272727]/80 text-[#EFD09E]/70">
+                Or sign up with
+              </span>
+            </div>
+          </div>
+
+          {/* Social Sign Up Option */}
+          <motion.button
+            type="button"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] hover:bg-[#EFD09E]/20 transition"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span className="text-xl">G</span>
+            <span className="text-sm font-medium">Continue with Google</span>
+          </motion.button>
+
+          {/* Login Link */}
+          <p className="text-center mt-8 text-[#EFD09E]/70 text-sm">
+            Already have an account?{" "}
+            <a
+              href="#"
+              className="text-[#D4AA7D] hover:text-[#EFD09E] transition font-semibold"
+            >
+              Sign in
+            </a>
+          </p>
         </div>
-     );
-}
- 
+      </motion.div>
+    </div>
+  );
+};
+
 export default SignUp;

@@ -1,19 +1,31 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Sparkles, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Check if user is logged in (you can replace this with your auth logic)
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Change to false if not logged in
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    console.log("User logged out");
+    setIsLoggedIn(false);
+    navigate("/login");
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
       {/* 🟨 Main Navbar */}
-      <nav className="fixed top-0 w-full left-0 bg-[#272727]/90  shadow-md z-[9999] py-3">
+      <nav className="fixed top-0 w-full left-0 bg-[#272727]/90 shadow-md z-[9999] py-3">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             {/* Logo Section */}
@@ -53,8 +65,6 @@ const Navbar = () => {
                 { name: "Home", path: "/" },
                 { name: "About", path: "/about" },
                 { name: "Contact", path: "/contact" },
-                { name: "Login", path: "/login" },
-                { name: "Sign Up", path: "/signup" },
               ].map((link) => (
                 <Link
                   key={link.path}
@@ -69,6 +79,44 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
+
+              {/* Conditional Login/Signup or Logout */}
+              {!isLoggedIn ? (
+                <>
+                  <Link
+                    to="/login"
+                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                    ${
+                      isActive("/login")
+                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                    }`}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                    ${
+                      isActive("/signup")
+                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                    }`}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ) : (
+                <motion.button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </motion.button>
+              )}
             </motion.div>
 
             {/* Mobile Menu Icon */}
@@ -107,8 +155,6 @@ const Navbar = () => {
               { name: "Home", path: "/" },
               { name: "About", path: "/about" },
               { name: "Contact", path: "/contact" },
-              { name: "Login", path: "/login" },
-              { name: "Sign Up", path: "/signup" },
             ].map((link) => (
               <Link
                 key={link.path}
@@ -124,6 +170,44 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+
+            {/* Mobile Conditional Login/Signup or Logout */}
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  to="/login"
+                  className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                  ${
+                    isActive("/login")
+                      ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                      : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                  ${
+                    isActive("/signup")
+                      ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                      : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            )}
           </div>
         </div>
       )}
