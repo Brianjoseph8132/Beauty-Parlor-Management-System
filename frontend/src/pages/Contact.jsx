@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import salon from "../assets/images/salon1.jpeg";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -83,7 +84,7 @@ const Contact = () => {
   return (
     <div className="bg-[#272727] min-h-screen">
       {/* Hero Section */}
-      <section className="bg-[#EFD09E] py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
+      <section className=" bg-[#EFD09E] py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.div
             className="text-center max-w-4xl mx-auto"
@@ -102,39 +103,18 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Contact Info Cards */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {contactInfo.map((info, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                className="bg-[#EFD09E]/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-[#D4AA7D]/20"
-              >
-                <div className="text-5xl mb-4">{info.icon}</div>
-                <h3 className="text-xl font-semibold mb-3 text-[#D4AA7D]">
-                  {info.title}
-                </h3>
-                {info.details.map((detail, idx) => (
-                  <p key={idx} className="text-[#EFD09E]/80 text-sm">
-                    {detail}
-                  </p>
-                ))}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Contact Form & Map Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative py-12 px-4 sm:px-6 lg:px-8">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src={salon}
+            alt="Background"
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <motion.div
@@ -142,6 +122,7 @@ const Contact = () => {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
+              className="bg-[#272727]/40 backdrop-blur-md rounded-3xl p-8 border border-[#D4AA7D]/30 shadow-2xl"
             >
               <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-[#D4AA7D]">
                 Send Us a Message
@@ -255,7 +236,7 @@ const Contact = () => {
               className="space-y-8"
             >
               {/* Map */}
-              <div>
+              <div className="bg-[#272727]/40 backdrop-blur-md rounded-3xl p-8 border border-[#D4AA7D]/30 shadow-2xl">
                 <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-[#D4AA7D]">
                   Find Us
                 </h2>
@@ -273,35 +254,72 @@ const Contact = () => {
                 </div>
               </div>
 
-              {/* Social Media Links */}
-              <div>
+              {/* Social Media & Contact Info */}
+              <div className="bg-[#272727]/40 backdrop-blur-md rounded-3xl p-8 border border-[#D4AA7D]/30 shadow-2xl">
                 <h3 className="text-2xl font-bold mb-6 text-[#D4AA7D]">
-                  Follow Us
+                  Connect With Us
                 </h3>
-                <div className="flex gap-4">
-                  {socialLinks.map((social, index) => (
-                    <motion.a
-                      key={index}
-                      href={social.url}
-                      className="w-14 h-14 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-full flex items-center justify-center text-[#EFD09E] hover:bg-[#D4AA7D] hover:text-[#272727] transition text-xl"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
-                      aria-label={social.name}
-                    >
-                      {social.icon}
-                    </motion.a>
-                  ))}
+                
+                {/* Contact Info */}
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center gap-3 text-[#EFD09E]">
+                    <span className="text-2xl">📍</span>
+                    <div>
+                      <p className="font-medium">123 Beauty Street</p>
+                      <p className="text-sm text-[#EFD09E]/70">Nairobi, Kenya</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 text-[#EFD09E]">
+                    <span className="text-2xl">📞</span>
+                    <div>
+                      <p className="font-medium">+254 123 456 789</p>
+                      <p className="text-sm text-[#EFD09E]/70">+254 987 654 321</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 text-[#EFD09E]">
+                    <span className="text-2xl">✉️</span>
+                    <div>
+                      <p className="font-medium">info@bpms.com</p>
+                      <p className="text-sm text-[#EFD09E]/70">support@bpms.com</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 text-[#EFD09E]">
+                    <span className="text-2xl">🕐</span>
+                    <div>
+                      <p className="font-medium">Mon - Fri: 9:00 AM - 7:00 PM</p>
+                      <p className="text-sm text-[#EFD09E]/70">Sat - Sun: 10:00 AM - 6:00 PM</p>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[#EFD09E]/70 mt-6 text-sm">
-                  Stay connected with us on social media for the latest updates, beauty tips, and exclusive offers.
-                </p>
+
+                {/* Social Media */}
+                <div className="border-t border-[#D4AA7D]/30 pt-6">
+                  <h4 className="text-lg font-semibold mb-4 text-[#EFD09E]">Follow Us</h4>
+                  <div className="flex gap-4">
+                    {socialLinks.map((social, index) => (
+                      <motion.a
+                        key={index}
+                        href={social.url}
+                        className="w-14 h-14 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-full flex items-center justify-center text-[#EFD09E] hover:bg-[#D4AA7D] hover:text-[#272727] transition text-xl"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        whileTap={{ scale: 0.9 }}
+                        aria-label={social.name}
+                      >
+                        {social.icon}
+                      </motion.a>
+                    ))}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Bottom CTA
+      {/* Bottom CTA */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
@@ -325,7 +343,7 @@ const Contact = () => {
             </motion.button>
           </motion.div>
         </div>
-      </section> */}
+      </section>
     </div>
   );
 };
