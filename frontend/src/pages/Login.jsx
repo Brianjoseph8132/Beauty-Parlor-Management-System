@@ -1,14 +1,23 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { useContext, useEffect, useState } from "react";
+import { Sparkles, Eye, EyeOff } from "lucide-react";
 import salon from "../assets/images/salon1.jpeg";
+import { UserContext } from "../context/UserContext";
+import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
+import { toast } from "react-toastify";
+
 
 const Login = () => {
+  const { login, login_with_google,current_user } = useContext(UserContext)
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
   });
+
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -19,10 +28,29 @@ const Login = () => {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Login submitted:", formData);
-    // Add your login logic here
+      e.preventDefault();
+      login(formData.email, formData.password, formData.rememberMe);
   };
+
+
+  // Redirect if the user is already logged in
+  useEffect(() => {
+    if (current_user) {
+      navigate('/')
+    }
+  })
+
+  async function handleGoogleLogin(credential) {
+    try {
+      await login_with_google(credential);
+      toast.success("Logged in successfully!");
+      navigate("/");
+    } catch (err) {
+      toast.error("Google login failed");
+      console.error(err);
+    }
+  }
+
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -104,16 +132,29 @@ const Login = () => {
               >
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
-                placeholder="Enter your password"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                  placeholder="Enter your password"
+                />
+                <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#EFD09E]/60 hover:text-[#D4AA7D] transition"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5"/>
+                  ) :(
+                    <Eye className="w-5 h-5"/>
+                  )}
+                </button>
+              </div> 
             </div>
 
             {/* Remember Me & Forgot Password */}
@@ -160,25 +201,25 @@ const Login = () => {
           </div>
 
           {/* Social Login Options */}
-          <motion.button
-            type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] hover:bg-[#EFD09E]/20 transition"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span className="text-xl">G</span>
-            <span className="text-sm font-medium">Continue with Google</span>
-          </motion.button>
+          {/* Google Login - Fixed */}
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={(credentialResponse) => {
+                handleGoogleLogin(credentialResponse.credential);
+              }}
+            />
+          </div>
 
           {/* Sign Up Link */}
           <p className="text-center mt-8 text-[#EFD09E]/70 text-sm">
             Don't have an account?{" "}
-            <a
+            <Link
+              to="/signup"
               href="#"
               className="text-[#D4AA7D] hover:text-[#EFD09E] transition font-semibold"
             >
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </motion.div>

@@ -13,12 +13,12 @@ user_bp = Blueprint("user_bp", __name__)
 @user_bp.route("/user", methods=["POST"])
 def add_users():
     data = request.get_json()
-    username = data.get_json('username')
-    email = data.get_json('email')
-    raw_password = data.get_json('password')
-    is_admin = data.get_json('is_admin', False)
-    is_beautician = data.get_json ('is_beautician', False)
-    is_receptionist = data.get_json('is_receptionist', False)
+    username = data.get('username')
+    email = data.get('email')
+    raw_password = data.get('password')
+    is_admin = data.get('is_admin', False)
+    is_beautician = data.get('is_beautician', False)
+    is_receptionist = data.get('is_receptionist', False)
     profile_picture = data.get('profile_picture', "https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=")
 
     # Validation for password length before hashing it

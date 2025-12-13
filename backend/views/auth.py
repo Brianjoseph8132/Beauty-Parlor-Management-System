@@ -1,7 +1,7 @@
 from models import User,db, TokenBlocklist
-from flask import jsonify, request, Blueprint,url_for,session
+from flask import jsonify, request, Blueprint,url_for,session, make_response
 from werkzeug.security import check_password_hash
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt, create_refresh_token, set_refresh_cookies,unset_jwt_cookies
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -10,11 +10,25 @@ from app import mail
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash
 from sqlalchemy_serializer import SerializerMixin
+import os
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 serializer = URLSafeTimedSerializer("SECRET_KEY")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
 
 auth_bp = Blueprint("auth_bp", __name__)
+
+
+def generate_unique_username(base_name):
+    username = base_name
+    counter = 1
+    while User.query.filter_by(username=username).first():
+        username = f"{base_name}{counter}"
+        counter += 1
+    return username
+
 
 # LOGIN
 @auth_bp.route("/login", methods=["POST"])
@@ -22,20 +36,38 @@ def login():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
+    remember = data.get("rememberMe")
 
     user = User.query.filter_by(email=email).first()
 
-    if user and check_password_hash(user.password, password):
-        access_token = create_access_token(identity=user.id)
-        return jsonify({
-            "access_token": access_token,
-            "is_admin": user.is_admin,
-            "is_beautician": user.is_beautician,
-            "is_receptionist": user.is_receptionist
-        }), 200
-    else:
+    if not (user and check_password_hash(user.password, password)):
         return jsonify({"error": "Either email/password is incorrect"}), 404
 
+    # Short-life access token
+    access_token = create_access_token(identity=user.id)
+
+    # Normal response payload
+    response = make_response(jsonify({
+        "access_token": access_token,
+        "is_admin": user.is_admin,
+        "is_beautician": user.is_beautician,
+        "is_receptionist": user.is_receptionist
+    }))
+
+    # If Remember Me create long-life refresh token stored in cookie
+    if remember:
+        refresh_token = create_refresh_token(identity=user.id)
+        set_refresh_cookies(response, refresh_token)
+
+    return response
+
+
+@auth_bp.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    user_id = get_jwt_identity()
+    new_access = create_access_token(identity=user_id)
+    return jsonify({"access_token": new_access})
 
 
 # Current User
@@ -56,25 +88,54 @@ def current_user():
     return jsonify(user_data)
 
 
-# login with google
+
 @auth_bp.route("/login_with_google", methods=["POST"])
 def login_with_google():
     data = request.get_json()
-    email = data.get("email")
+    token = data.get("token")
 
-    if not email:
-        return jsonify({"error": "Email is required"}), 400
+    if not token:
+        return jsonify({"error": "Missing Google token"}), 400
 
-    email = data["email"]
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            token,
+            requests.Request(),
+            GOOGLE_CLIENT_ID 
+        )
+    except ValueError:
+        return jsonify({"error": "Invalid Google token"}), 400
+
+    email = idinfo["email"]
+    name = idinfo.get("name")
+    picture = idinfo.get("picture")
 
     user = User.query.filter_by(email=email).first()
+    if not user:
+        base_username = name or email.split("@")[0]
+        unique_username = generate_unique_username(base_username)
 
-    if user :
-        access_token = create_access_token(identity=user.id)
-        return jsonify({"access_token": access_token}), 200
+        user = User(
+            email=email,
+            username=unique_username,
+            password=generate_password_hash(os.urandom(32).hex()),
+            profile_picture=picture,
+            is_admin=False,
+            is_beautician=False,
+            is_receptionist=False
+        )
+        db.session.add(user)
+        db.session.commit()
 
-    return jsonify({"error": "Email is incorrect"})
 
+    access_token = create_access_token(identity=user.id)
+    response = make_response(jsonify({
+        "access_token": access_token,
+        "is_admin": user.is_admin,
+        "is_beautician": user.is_beautician,
+        "is_receptionist": user.is_receptionist
+    }))
+    return response
 
 
 @auth_bp.route('/auth/forgot-password', methods=['POST'])
@@ -130,7 +191,6 @@ def reset_password(token):
 
 
 
-# Logout
 @auth_bp.route("/logout", methods=["DELETE"])
 @jwt_required()
 def logout():
@@ -138,4 +198,7 @@ def logout():
     now = datetime.now(timezone.utc)
     db.session.add(TokenBlocklist(jti=jti, created_at=now))
     db.session.commit()
-    return jsonify({"success":"Logged out successfully"})
+
+    response = jsonify({"success": "Logged out successfully"})
+    unset_jwt_cookies(response)  # IMPORTANT
+    return response

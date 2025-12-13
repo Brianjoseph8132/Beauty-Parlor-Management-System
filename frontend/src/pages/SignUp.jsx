@@ -1,17 +1,25 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { useContext, useState } from "react";
+import { Sparkles, Eye, EyeOff } from "lucide-react";
 import salon from "../assets/images/salon1.jpeg";
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
+import { UserContext } from "../context/UserContext";
+import { Link, useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
+  const {addUser} = useContext(UserContext)
   const [formData, setFormData] = useState({
-    fullName: "",
+    username: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
-    agreeToTerms: false,
+    // agreeToTerms: false,
   });
+
+
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleChange = (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -23,8 +31,12 @@ const SignUp = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Sign up submitted:", formData);
-    // Add your sign up logic here
+    
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+    addUser(formData.username, formData.email, formData.password);
   };
 
   const fadeIn = {
@@ -85,13 +97,13 @@ const SignUp = () => {
                 htmlFor="fullName"
                 className="block text-[#EFD09E] mb-2 font-medium text-sm"
               >
-                Full Name
+                Username
               </label>
               <input
                 type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
+                id="username"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
@@ -120,7 +132,7 @@ const SignUp = () => {
             </div>
 
             {/* Phone Field */}
-            <div>
+            {/* <div>
               <label
                 htmlFor="phone"
                 className="block text-[#EFD09E] mb-2 font-medium text-sm"
@@ -137,7 +149,7 @@ const SignUp = () => {
                 className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
                 placeholder="Enter your mobile number"
               />
-            </div>
+            </div> */}
 
             {/* Password Field */}
             <div>
@@ -147,16 +159,29 @@ const SignUp = () => {
               >
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
-                placeholder="Create a password"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                  placeholder="Create a password"
+                />
+                <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#EFD09E]/60 hover:text-[#D4AA7D] transition"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5"/>
+                  ): (
+                    <Eye className="w-5 h-5"/>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Confirm Password Field */}
@@ -167,16 +192,29 @@ const SignUp = () => {
               >
                 Confirm Password
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
-                placeholder="Confirm your password"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
+                  placeholder="Confirm your password"
+                />
+                <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#EFD09E]/60 hover:text-[#D4AA7D] transition"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5"/>
+                  ): (
+                    <Eye className="w-5 h-5"/>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Terms & Conditions
@@ -239,12 +277,13 @@ const SignUp = () => {
           {/* Login Link */}
           <p className="text-center mt-8 text-[#EFD09E]/70 text-sm">
             Already have an account?{" "}
-            <a
+            <Link
+              to="/login"
               href="#"
               className="text-[#D4AA7D] hover:text-[#EFD09E] transition font-semibold"
             >
               Sign in
-            </a>
+            </Link>
           </p>
         </div>
       </motion.div>

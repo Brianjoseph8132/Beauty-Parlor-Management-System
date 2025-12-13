@@ -13,7 +13,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 
-CORS(app)
+CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 # migration initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///salon.sqlite'
 migrate = Migrate(app, db)
@@ -23,6 +23,7 @@ db.init_app(app)
 # jwt
 app.config["JWT_SECRET_KEY"] = "bjdhbjfhdjgewu"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] =  timedelta(hours=1)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=14)
 
 jwt = JWTManager(app)
 jwt.init_app(app)
@@ -40,10 +41,16 @@ app.config['MAIL_DEFAULT_SENDER'] = "ashley.testingmoringa@gmail.com"
 
 mail = Mail(app)
 
+app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
+app.config["JWT_COOKIE_SECURE"] = False  
+app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+
 # imports functions from views
 from views import *
 
 app.register_blueprint(user_bp)
+app.register_blueprint(auth_bp)
 
 
 
