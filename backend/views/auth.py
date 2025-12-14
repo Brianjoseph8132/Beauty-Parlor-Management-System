@@ -16,6 +16,7 @@ from google.auth.transport import requests
 
 serializer = URLSafeTimedSerializer("SECRET_KEY")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 
 auth_bp = Blueprint("auth_bp", __name__)
@@ -154,7 +155,7 @@ def forgot_password():
     token = serializer.dumps(email, salt="password-reset")
 
     # Create the reset link pointing to the frontend
-    reset_link = f"http://localhost:5173/reset-password/{token}"
+    reset_link = f"{FRONTEND_URL}/reset-password/{token}"
 
     # Send the email with the reset link
     msg = Message("Password Reset Request", sender="ashley.testingmoringa@gmail.com", recipients=[email])
@@ -200,5 +201,5 @@ def logout():
     db.session.commit()
 
     response = jsonify({"success": "Logged out successfully"})
-    unset_jwt_cookies(response)  # IMPORTANT
+    unset_jwt_cookies(response)  
     return response

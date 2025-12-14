@@ -1,20 +1,19 @@
 import { motion } from "framer-motion";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
 import salon from "../assets/images/salon1.jpeg";
 import { GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from "jwt-decode";
 import { UserContext } from "../context/UserContext";
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
 
 const SignUp = () => {
-  const {addUser} = useContext(UserContext)
+  const {addUser, login_with_google, current_user} = useContext(UserContext)
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
-    // agreeToTerms: false,
   });
 
 
@@ -38,6 +37,26 @@ const SignUp = () => {
     }
     addUser(formData.username, formData.email, formData.password);
   };
+
+
+  // Redirect if the user is already logged in
+  useEffect(() => {
+    if (current_user) {
+      navigate('/')
+    }
+  })
+
+  async function handleGoogleLogin(credential) {
+    try {
+      await login_with_google(credential);
+      toast.success("Logged in successfully!");
+      navigate("/");
+    } catch (err) {
+      toast.error("Google login failed");
+      console.error(err);
+    }
+  }
+
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -131,26 +150,6 @@ const SignUp = () => {
               />
             </div>
 
-            {/* Phone Field */}
-            {/* <div>
-              <label
-                htmlFor="phone"
-                className="block text-[#EFD09E] mb-2 font-medium text-sm"
-              >
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
-                placeholder="Enter your mobile number"
-              />
-            </div> */}
-
             {/* Password Field */}
             <div>
               <label
@@ -217,29 +216,6 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Terms & Conditions
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                id="agreeToTerms"
-                name="agreeToTerms"
-                checked={formData.agreeToTerms}
-                onChange={handleChange}
-                required
-                className="w-4 h-4 mt-1 rounded border-[#D4AA7D]/30 bg-[#EFD09E]/10 text-[#D4AA7D] focus:ring-[#D4AA7D] focus:ring-offset-0"
-              />
-              <label htmlFor="agreeToTerms" className="text-[#EFD09E]/80 text-sm cursor-pointer">
-                I agree to the{" "}
-                <a href="#" className="text-[#D4AA7D] hover:text-[#EFD09E] transition">
-                  Terms & Conditions
-                </a>{" "}
-                and{" "}
-                <a href="#" className="text-[#D4AA7D] hover:text-[#EFD09E] transition">
-                  Privacy Policy
-                </a>
-              </label>
-            </div> */}
-
             {/* Submit Button */}
             <motion.button
               type="submit"
@@ -263,17 +239,14 @@ const SignUp = () => {
             </div>
           </div>
 
-          {/* Social Sign Up Option */}
-          <motion.button
-            type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] hover:bg-[#EFD09E]/20 transition"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span className="text-xl">G</span>
-            <span className="text-sm font-medium">Continue with Google</span>
-          </motion.button>
-
+          {/* Google Login */}
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={(credentialResponse) => {
+                handleGoogleLogin(credentialResponse.credential);
+              }}
+            />
+          </div>
           {/* Login Link */}
           <p className="text-center mt-8 text-[#EFD09E]/70 text-sm">
             Already have an account?{" "}

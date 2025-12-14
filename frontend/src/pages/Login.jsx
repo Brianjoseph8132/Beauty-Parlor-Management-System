@@ -169,12 +169,13 @@ const Login = () => {
                 />
                 <span className="text-[#EFD09E]/80 text-sm">Remember me</span>
               </label>
-              <a
+              <Link
+                to="/forgot-password"
                 href="#"
                 className="text-[#D4AA7D] hover:text-[#EFD09E] transition text-sm font-medium"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             {/* Submit Button */}
@@ -200,8 +201,8 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Social Login Options */}
-          {/* Google Login - Fixed */}
+         
+          {/* Google Login */}
           <div className="flex justify-center">
             <GoogleLogin
               onSuccess={(credentialResponse) => {

@@ -7,6 +7,8 @@ import Hero from './components/Hero'
 import Contact from './pages/Contact'
 import Login from './pages/Login'
 import { UserProvider } from './context/UserContext'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   
@@ -24,6 +26,8 @@ function App() {
           <Route path='/signup' element={<SignUp/>}/>
           <Route path='/hero' element={<Hero/>}/>
           <Route path='/login' element={<Login/>}/>
+          <Route path='/forgot-password' element={<ForgotPassword/>}/>
+          <Route path='reset-password/:token' element={<ResetPassword/>}/>
           </Route>
         </Route>
       </Routes>
