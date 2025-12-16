@@ -26,7 +26,7 @@ const Navbar = () => {
 
   return (
     <>
-      {/* 🟨 Main Navbar */}
+      {/* Main Navbar */}
       <nav className="fixed top-0 w-full left-0 bg-[#272727]/90 shadow-md z-[9999] py-3">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
@@ -71,7 +71,7 @@ const Navbar = () => {
                     to="/"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                     ${
-                      isActive("/login")
+                      isActive("/")
                         ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
                         : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                     }`}
@@ -95,7 +95,7 @@ const Navbar = () => {
                     to="/about"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                     ${
-                      isActive("/login")
+                      isActive("/about")
                         ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
                         : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                     }`}
@@ -106,12 +106,23 @@ const Navbar = () => {
                     to="/contact"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                     ${
-                      isActive("/login")
+                      isActive("/contact")
                         ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
                         : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                     }`}
                   >
                     Contact
+                  </Link>
+                  <Link
+                    to="/service"
+                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                    ${
+                      isActive("/service")
+                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                    }`}
+                  >
+                    Service
                   </Link>
                   <Link
                     to="/login"
@@ -157,7 +168,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* 🟨 Sidebar (Mobile Only) */}
+      {/* Sidebar (Mobile Only) */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[9990]">
           {/* Dark overlay */}
@@ -180,7 +191,7 @@ const Navbar = () => {
                   to="/"
                   className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                   ${
-                    isActive("/login")
+                    isActive("/")
                       ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
                       : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                   }`}
@@ -203,7 +214,7 @@ const Navbar = () => {
                   to="/about"
                   className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                   ${
-                    isActive("/login")
+                    isActive("/about")
                       ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
                       : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                   }`}
@@ -215,7 +226,7 @@ const Navbar = () => {
                   to="/contact"
                   className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                   ${
-                    isActive("/login")
+                    isActive("/contact")
                       ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
                       : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                   }`}

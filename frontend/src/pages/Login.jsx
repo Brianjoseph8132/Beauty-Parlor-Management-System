@@ -36,20 +36,15 @@ const Login = () => {
   // Redirect if the user is already logged in
   useEffect(() => {
     if (current_user) {
-      navigate('/')
+      navigate('/');
     }
-  })
+  }, [current_user, navigate]);
+
 
   async function handleGoogleLogin(credential) {
-    try {
-      await login_with_google(credential);
-      toast.success("Logged in successfully!");
-      navigate("/");
-    } catch (err) {
-      toast.error("Google login failed");
-      console.error(err);
-    }
+    login_with_google(credential);
   }
+
 
 
   const fadeIn = {
