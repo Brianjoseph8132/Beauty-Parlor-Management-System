@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { UserContext } from "./UserContext";
 import { toast } from "react-toastify";
+import { uploadToCloudinary } from "../api/Cloudinary"
 
 export const ServiceContext = createContext();
 
@@ -29,7 +30,7 @@ export const ServiceProvider = ({ children }) => {
       .catch((error) =>
         console.error("Error fetching categories:", error)
       );
-  }, [authToken]);
+  }, [authToken, onChange]);
 
 
 
@@ -50,7 +51,7 @@ export const ServiceProvider = ({ children }) => {
 
                 if (response.message) {
                     toast.success(response.message);
-                    setOnChange(!onchange); 
+                    setOnChange(!onChange); 
                 } else {
                     toast.error(response.error || "Failed to delete category");
                 }
@@ -150,36 +151,48 @@ export const ServiceProvider = ({ children }) => {
 
 
     // Add Service 
-    const addService = (title,description,duration_minutes,price,image,category_name) => {
-        toast.loading("Adding Service...");
+    const addService = async (title,description,duration_minutes,price,imageFile,category_name) => {
+        try {
+            toast.loading("Adding Service...")
 
-        fetch("http://127.0.0.1:5000/service", {
+            let imageUrl = null
+
+            if (imageFile) {
+            const upload = await uploadToCloudinary(imageFile)
+            imageUrl = upload.secure_url
+            }
+
+            const res = await fetch("http://127.0.0.1:5000/service", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${authToken}`,
             },
-            body: JSON.stringify({title,description,duration_minutes,price,image,category_name  }),
-        })
-            .then((resp) => resp.json())
-            .then((response) => {
-                toast.dismiss();
-
-                if (response.success) {
-                    toast.success(response.success);
-                    setOnChange(!onChange); // refresh Services
-                } else if (response.error) {
-                    toast.error(response.error);
-                } else {
-                    toast.error("Failed to add service");
-                }
+            body: JSON.stringify({
+                title,
+                description,
+                duration_minutes,
+                price,
+                image: imageUrl,
+                category_name
+            }),
             })
-            .catch((error) => {
-                toast.dismiss();
-                toast.error("Error adding Service");
-                console.error("Add Service Error:", error);
-            });
-    };
+
+            const response = await res.json()
+            toast.dismiss()
+
+            if (response.success) {
+            toast.success(response.success)
+            setOnChange(!onChange)
+            } else {
+            toast.error(response.error || "Failed to add service")
+            }
+        } catch (error) {
+            toast.dismiss()
+            toast.error("Error adding service")
+            console.error(error)
+        }
+    }
 
 
     // Fetch Service by ID
@@ -207,36 +220,48 @@ export const ServiceProvider = ({ children }) => {
     };
 
     // Update service
-    const updateService = (title, description, duration_minutes, price, image, category_name, service_id) => {
-        toast.loading("Updating your Service... ");
+    const updateService = async (title,description,duration_minutes,price,imageFile,category_name,service_id) => {
+        try {
+            toast.loading("Updating service...")
 
-        fetch(`http://127.0.0.1:5000/services/${service_id}`, {
+            let imageUrl = null
+            if (imageFile) {
+            const upload = await uploadToCloudinary(imageFile)
+            imageUrl = upload.secure_url
+            }
+
+            const payload = {
+            title,
+            description,
+            duration_minutes,
+            price,
+            category_name,
+            ...(imageUrl && { image: imageUrl })
+            }
+
+            const res = await fetch(`http://127.0.0.1:5000/services/${service_id}`, {
             method: "PUT",
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
             },
-            body: JSON.stringify({ title, description, duration_minutes, price, image, category_name })
-        })
-        .then((resp) => resp.json())
-        .then((response) => {
-            toast.dismiss();
+            body: JSON.stringify(payload),
+            })
+
+            const response = await res.json()
+            toast.dismiss()
 
             if (response.message) {
-                toast.success(response.message);
-                setOnChange(!onChange);
-            } else if (response.error) {
-                toast.error(response.error);
+            toast.success(response.message)
+            setOnChange(!onChange)
             } else {
-                toast.error("Failed to update service.");
+            toast.error(response.error || "Update failed")
             }
-        })
-        .catch((error) => {
-            toast.dismiss();
-            toast.error("Error updating service.");
-            console.error("Update Service Error:", error);
-        });
-    };
+        } catch (err) {
+            toast.dismiss()
+            toast.error("Error updating service")
+        }
+    }
 
 
     // Delete  Service

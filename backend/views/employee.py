@@ -1,0 +1,246 @@
+from models import db, Employee, Service
+from flask import jsonify,request, Blueprint
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from utils.constants import DAY_MAP, DAY_NAME_TO_NUM
+from datetime import time, datetime
+# from decorator import admin_required
+
+
+employee_bp = Blueprint("employee_bp", __name__)
+
+
+@employee_bp.route("/employee", methods=["POST"])
+def add_employee():
+    data = request.json
+
+    full_name = data.get("full_name")
+    work_start_str = data.get("work_start")
+    work_end_str = data.get("work_end")
+    work_days = data.get("work_days", [])        # List of day names
+    skills_names = data.get("skills", [])             # Existing service names
+    other_skills_list = data.get("other_skills", [])  # Other skills
+    override_active = data.get("override_active")
+    employee_profile_picture = data.get('profile_picture', "https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=")
+    is_active = data.get("is_active", True)
+
+    # Validate required fields
+    if not all([full_name, work_start_str, work_end_str, work_days]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # Convert times
+    try:
+        work_start = datetime.strptime(work_start_str, "%H:%M").time()
+        work_end = datetime.strptime(work_end_str, "%H:%M").time()
+    except ValueError:
+        return jsonify({"error": "Invalid time format, use HH:MM"}), 400
+
+    # Convert day names → numbers for storage
+    try:
+        work_days_numbers = [DAY_NAME_TO_NUM[day] for day in work_days]
+    except KeyError as e:
+        return jsonify({"error": f"Invalid day name: {str(e)}"}), 400
+
+    # Create employee
+    employee = Employee(
+        full_name=full_name,
+        work_start=work_start,
+        work_end=work_end,
+        work_days=",".join(work_days_numbers),
+        employee_profile_picture=employee_profile_picture,
+        override_active=override_active,
+        _is_active=is_active,
+        other_skills=",".join(other_skills_list) if other_skills_list else None
+    )
+
+    # Validate and assign existing service skills
+    if skills_names:
+        services = Service.query.filter(Service.title.in_(skills_names)).all()
+        valid_titles = [s.title for s in services]
+        invalid_skills = [name for name in skills_names if name not in valid_titles]
+
+        if invalid_skills:
+            return jsonify({
+                "error": "Some service names are invalid",
+                "invalid_services": invalid_skills
+            }), 400
+
+        employee.skills.extend(services)
+
+    # Save employee
+    db.session.add(employee)
+    db.session.commit()
+
+    # Prepare response with readable day names
+    employee_data = {
+        "id": employee.id,
+        "full_name": employee.full_name,
+        "work_start": employee.work_start.strftime("%H:%M"),
+        "work_end": employee.work_end.strftime("%H:%M"),
+        "work_days": [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP],
+        "skills": [s.title for s in employee.skills],
+        "other_skills": employee.other_skills.split(",") if employee.other_skills else [],
+        "is_active": employee.is_active
+    }
+
+    return jsonify({"message": "Employee added successfully", "employee": employee_data}), 201
+
+
+
+
+@employee_bp.route("/employee/<int:employee_id>", methods=["GET"])
+def get_employee_profile(employee_id):
+    employee = Employee.query.get(employee_id)
+    if not employee:
+        return jsonify({"error": "Employee not found"}), 404
+
+    work_days_list = [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP]
+
+    employee_data = {
+        "id": employee.id,
+        "full_name": employee.full_name,
+        "work_start": employee.work_start.strftime("%H:%M"),
+        "work_end": employee.work_end.strftime("%H:%M"),
+        "work_days": work_days_list,
+        "skills": [s.title for s in employee.skills],
+        "other_skills": employee.other_skills.split(",") if employee.other_skills else [],
+        "is_active": employee.is_active,
+        "employee_profile_picture":employee.employee_profile_picture
+    }
+
+    return jsonify({"employee": employee_data}), 200
+
+
+
+
+
+@employee_bp.route("/employees/<int:employee_id>", methods=["PUT"])
+def update_employee(employee_id):
+    data = request.json
+    employee = Employee.query.get(employee_id)
+
+    if not employee:
+        return jsonify({"error": "Employee not found"}), 404
+
+    # Update full name
+    full_name = data.get("full_name")
+    if full_name:
+        employee.full_name = full_name
+
+    # Update working hours
+    work_start_str = data.get("work_start")
+    work_end_str = data.get("work_end")
+    if work_start_str:
+        try:
+            employee.work_start = datetime.strptime(work_start_str, "%H:%M").time()
+        except ValueError:
+            return jsonify({"error": "Invalid work_start time format, use HH:MM"}), 400
+    if work_end_str:
+        try:
+            employee.work_end = datetime.strptime(work_end_str, "%H:%M").time()
+        except ValueError:
+            return jsonify({"error": "Invalid work_end time format, use HH:MM"}), 400
+
+    # Update working days (using day names)
+    work_days_input = data.get("work_days")
+    if work_days_input:
+        try:
+            work_days_numbers = [DAY_NAME_TO_NUM[day] for day in work_days_input]
+            employee.work_days = ",".join(work_days_numbers)
+        except KeyError as e:
+            return jsonify({"error": f"Invalid day name: {str(e)}"}), 400
+
+    # Update skills (existing services)
+    skills_names = data.get("skills")
+    if skills_names is not None:  # allow clearing skills with empty list
+        services = Service.query.filter(Service.title.in_(skills_names)).all()
+        valid_titles = [s.title for s in services]
+        invalid_skills = [name for name in skills_names if name not in valid_titles]
+
+        if invalid_skills:
+            return jsonify({
+                "error": "Some service names are invalid",
+                "invalid_services": invalid_skills
+            }), 400
+
+        employee.skills = services  # replace current skills
+
+    # Update other skills
+    other_skills_list = data.get("other_skills")
+    if other_skills_list is not None:  # allow clearing other skills
+        employee.other_skills = ",".join(other_skills_list) if other_skills_list else None
+
+    # Update active/override
+    if "is_active" in data:
+        employee._is_active = data["is_active"]
+    if "override_active" in data:
+        employee.override_active = data["override_active"]
+    
+    if "employee_profile_picture" in data:
+        employee.employee_profile_picture = data["employee_profile_picture"]
+
+    db.session.commit()
+
+    # Prepare response
+    employee_data = {
+        "id": employee.id,
+        "full_name": employee.full_name,
+        "work_start": employee.work_start.strftime("%H:%M"),
+        "work_end": employee.work_end.strftime("%H:%M"),
+        "work_days": [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP],
+        "skills": [s.title for s in employee.skills],
+        "other_skills": employee.other_skills.split(",") if employee.other_skills else [],
+        "is_active": employee.is_active,
+        "employee_profile_picture": employee.employee_profile_picture
+    }
+
+    return jsonify({"message": "Employee updated successfully", "employee": employee_data}), 200
+
+
+
+
+
+
+@employee_bp.route("/employees/<int:employee_id>", methods=["DELETE"])
+def delete_employee(employee_id):
+    employee = Employee.query.get(employee_id)
+    if not employee:
+        return jsonify({"error": "Employee not found"}), 404
+
+    # Optional: check if employee has bookings
+    if employee.bookings:
+        return jsonify({
+            "error": "Cannot delete employee with existing bookings"
+        }), 400
+
+    # Remove all skill associations
+    employee.skills = []
+
+    # Delete employee
+    db.session.delete(employee)
+    db.session.commit()
+
+    return jsonify({"message": "Employee deleted successfully"}), 200
+
+
+
+
+@employee_bp.route("/employees", methods=["GET"])
+def list_employees():
+    employees = Employee.query.all()
+    employees_data = []
+
+    for employee in employees:
+        employees_data.append({
+            "id": employee.id,
+            "full_name": employee.full_name,
+            "work_start": employee.work_start.strftime("%H:%M"),
+            "work_end": employee.work_end.strftime("%H:%M"),
+            "work_days": [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP],
+            "skills": [s.title for s in employee.skills],
+            "other_skills": employee.other_skills.split(",") if employee.other_skills else [],
+            "is_active": employee.is_active,
+            "employee_profile_picture": employee.employee_profile_picture
+        })
+
+    return jsonify({"employees": employees_data}), 200
+

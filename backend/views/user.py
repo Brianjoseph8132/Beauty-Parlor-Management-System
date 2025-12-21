@@ -8,6 +8,20 @@ from email_validator import validate_email, EmailNotValidError
 
 user_bp = Blueprint("user_bp", __name__)
 
+def normalize_phone(phone):
+    phone = phone.strip().replace(" ", "")
+
+    if phone.startswith("0"):
+        return "+254" + phone[1:]
+
+    if phone.startswith("7"):
+        return "+254" + phone
+
+    if phone.startswith("+"):
+        return phone
+
+    raise ValueError("Invalid phone number")
+
 
 # Add User
 @user_bp.route("/user", methods=["POST"])
@@ -22,8 +36,9 @@ def add_users():
     profile_picture = data.get('profile_picture', "https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=")
 
     # Validation for password length before hashing it
-    if not isinstance(raw_password, str) or len(raw_password) != 8:
-        return jsonify({"error": "Password must be exatcly 8 characters"}), 400
+    if not isinstance(raw_password, str) or len(raw_password) < 8:
+        raise ValueError("Password must be a string of at least 8 characters")
+
     
     password = generate_password_hash(raw_password)
 

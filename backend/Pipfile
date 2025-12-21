@@ -21,6 +21,8 @@ flask-caching = "*"
 itsdangerous = "*"
 sqlalchemy-serializer = "*"
 google-auth = "*"
+cloudinary = "*"
+apscheduler = "*"
 
 [dev-packages]
 

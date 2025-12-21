@@ -1,128 +1,18 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Search } from "lucide-react";
+import { ServiceContext } from "../context/ServiceContext";
 
 const Service = () => {
+  const { categories,services } = useContext(ServiceContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const servicesPerPage = 8;
 
-  const allServices = [
-    {
-      id: 1,
-      title: "Makeup Application",
-      category: "Cosmetics",
-      price: "$50",
-      duration: "45 min",
-      description: "Professional makeup for any occasion",
-      image: "cosmetics-image-url",
-    },
-    {
-      id: 2,
-      title: "Bridal Makeup",
-      category: "Cosmetics",
-      price: "$150",
-      duration: "2 hours",
-      description: "Complete bridal makeup package",
-      image: "cosmetics-image-url",
-    },
-    {
-      id: 3,
-      title: "Hair Styling",
-      category: "Hairdressing",
-      price: "$40",
-      duration: "1 hour",
-      description: "Expert hair styling and design",
-      image: "hairdressing-image-url",
-    },
-    {
-      id: 4,
-      title: "Hair Coloring",
-      category: "Hairdressing",
-      price: "$80",
-      duration: "2 hours",
-      description: "Professional hair coloring service",
-      image: "hairdressing-image-url",
-    },
-    {
-      id: 5,
-      title: "Men's Haircut",
-      category: "Barber",
-      price: "$25",
-      duration: "30 min",
-      description: "Classic and modern men's cuts",
-      image: "barber-image-url",
-    },
-    {
-      id: 6,
-      title: "Beard Grooming",
-      category: "Barber",
-      price: "$20",
-      duration: "20 min",
-      description: "Beard trimming and styling",
-      image: "barber-image-url",
-    },
-    {
-      id: 7,
-      title: "Swedish Massage",
-      category: "Massages",
-      price: "$70",
-      duration: "1 hour",
-      description: "Relaxing full body massage",
-      image: "massage-image-url",
-    },
-    {
-      id: 8,
-      title: "Deep Tissue Massage",
-      category: "Massages",
-      price: "$90",
-      duration: "1 hour",
-      description: "Therapeutic deep tissue work",
-      image: "massage-image-url",
-    },
-    {
-      id: 9,
-      title: "Facial Treatment",
-      category: "Body Treatments",
-      price: "$60",
-      duration: "45 min",
-      description: "Revitalizing facial care",
-      image: "body-treatment-image-url",
-    },
-    {
-      id: 10,
-      title: "Body Scrub",
-      category: "Body Treatments",
-      price: "$75",
-      duration: "1 hour",
-      description: "Exfoliating body treatment",
-      image: "body-treatment-image-url",
-    },
-    {
-      id: 11,
-      title: "Essential Oils Therapy",
-      category: "Aromatherapy",
-      price: "$65",
-      duration: "1 hour",
-      description: "Therapeutic aromatherapy session",
-      image: "aromatherapy-image-url",
-    },
-    {
-      id: 12,
-      title: "Relaxation Aromatherapy",
-      category: "Aromatherapy",
-      price: "$55",
-      duration: "45 min",
-      description: "Calming aromatherapy experience",
-      image: "aromatherapy-image-url",
-    },
-  ];
-
-  const categories = ["All", "Cosmetics", "Hairdressing", "Barber", "Massages", "Body Treatments", "Aromatherapy"];
-
-  const filteredServices = allServices.filter((service) => {
-    const matchesCategory = selectedCategory === "All" || service.category === selectedCategory;
+  
+  const filteredServices = services.filter((service) => {
+    const matchesCategory = selectedCategory === "All" || service.category?.name === selectedCategory;
     const matchesSearch = service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -212,7 +102,7 @@ const Service = () => {
             viewport={{ once: true }}
             className="flex flex-wrap justify-center gap-3 mb-12"
           >
-            {categories.map((category) => (
+            {["All", ...categories.map(c => c.name)].map((category) => (
               <motion.button
                 key={category}
                 onClick={() => handleCategoryChange(category)}
@@ -256,7 +146,7 @@ const Service = () => {
                       </span>
                     </div>
                     <div className="absolute top-3 right-3 bg-[#D4AA7D] text-[#272727] px-3 py-1 rounded-full text-sm font-semibold">
-                      {service.price}
+                      ${service.price} 
                     </div>
                   </div>
 
@@ -264,7 +154,7 @@ const Service = () => {
                   <div className="p-5">
                     <div className="mb-2">
                       <span className="text-xs font-semibold text-[#D4AA7D] uppercase tracking-wide">
-                        {service.category}
+                        {service.category?.name}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold text-[#272727] mb-2">
@@ -275,7 +165,7 @@ const Service = () => {
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-[#272727]/60 flex items-center gap-1">
-                        🕐 {service.duration}
+                        🕐 {service.duration_minutes} min
                       </span>
                       <motion.button
                         className="bg-[#D4AA7D] text-[#272727] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#272727] hover:text-[#EFD09E] transition"

@@ -1,7 +1,7 @@
 from models import Category,db
 from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from decorator import admin_required
+# from decorator import admin_required
 
 
 category_bp = Blueprint("category_bp", __name__)
@@ -9,8 +9,8 @@ category_bp = Blueprint("category_bp", __name__)
 
 # Add Category
 @category_bp.route("/category", methods=["POST"])
-@jwt_required()
-@admin_required
+# @jwt_required()
+# @admin_required
 def add_category():
     data = request.get_json()
 
@@ -51,7 +51,7 @@ def get_categories():
 # Delete category
 @category_bp.route("/categories/name/<string:category_name>", methods=["DELETE"])
 @jwt_required()
-@admin_required
+# @admin_required
 def delete_category_by_name(category_name):
     category = Category.query.filter_by(name=category_name).first()
 
@@ -69,7 +69,7 @@ def delete_category_by_name(category_name):
 # Update category
 @category_bp.route("/category/name/<string:current_name>", methods=["PUT"])
 @jwt_required()
-@admin_required
+# @admin_required
 def update_category_by_name(current_name):
     data = request.get_json()
 

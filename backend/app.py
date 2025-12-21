@@ -53,6 +53,8 @@ app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(category_bp)
 app.register_blueprint(service_bp)
+app.register_blueprint(booking_bp)
+app.register_blueprint(employee_bp)
 
 
 

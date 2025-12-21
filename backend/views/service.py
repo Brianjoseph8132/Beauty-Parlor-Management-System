@@ -1,15 +1,15 @@
 from models import Service,db, Category
 from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from decorator import admin_required
+# from decorator import admin_required
 
 
 service_bp = Blueprint("service_bp", __name__)
 
 # Add service
 @service_bp.route("/service", methods=["POST"])
-@jwt_required()
-@admin_required
+# @jwt_required()
+# @admin_required
 def add_service():
     data = request.get_json()
 
@@ -29,7 +29,7 @@ def add_service():
 
     # Validate numeric fields
     try:
-        duration_minutes = str(duration_minutes)
+        duration_minutes = int(duration_minutes)
         price = float(price)
     except ValueError:
         return jsonify({
@@ -97,7 +97,7 @@ def get_service(service_id):
 
 @service_bp.route("/services/<int:service_id>", methods=["PUT"])
 @jwt_required()
-@admin_required
+# @admin_required
 def update_service(service_id):
     data = request.get_json()
 
@@ -121,7 +121,7 @@ def update_service(service_id):
         service.description = description
     if duration_minutes is not None:
         try:
-            service.duration_minutes = str(duration_minutes)
+            service.duration_minutes = int(duration_minutes)
         except ValueError:
             return jsonify({"error": "duration_minutes must be a string"}), 400
     if price is not None:
@@ -154,7 +154,7 @@ def update_service(service_id):
 
 @service_bp.route("/service-del/<int:service_id>", methods=["DELETE"])
 @jwt_required()
-@admin_required
+# @admin_required
 def delete_service(service_id):
     # Find the service
     service = Service.query.get(service_id)
