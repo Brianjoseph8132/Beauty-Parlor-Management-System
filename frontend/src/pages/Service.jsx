@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useContext, useState } from "react";
 import { Search } from "lucide-react";
 import { ServiceContext } from "../context/ServiceContext";
+import { useNavigate } from "react-router-dom";
+
 
 const Service = () => {
   const { categories,services } = useContext(ServiceContext);
@@ -24,6 +26,8 @@ const Service = () => {
   const indexOfFirstService = indexOfLastService - servicesPerPage;
   const currentServices = filteredServices.slice(indexOfFirstService, indexOfLastService);
 
+  const navigate = useNavigate();
+
   // Reset to page 1 when filter or search changes
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
@@ -39,6 +43,18 @@ const Service = () => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const handleBookNow = (service) => {
+    navigate("/book", {
+      state: {
+        serviceId: service.id,
+        title: service.title,
+        duration: service.duration_minutes,
+        price: service.price,
+      },
+    });
+  };
+
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -168,6 +184,7 @@ const Service = () => {
                         🕐 {service.duration_minutes} min
                       </span>
                       <motion.button
+                        onClick={() => handleBookNow(service)}
                         className="bg-[#D4AA7D] text-[#272727] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#272727] hover:text-[#EFD09E] transition"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}

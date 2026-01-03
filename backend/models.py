@@ -19,7 +19,9 @@ class User(db.Model):
     is_receptionist = db.Column(db.Boolean, default=False)
     profile_picture = db.Column(db.String(256), nullable=True, default='https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=')
 
-    bookings = db.relationship("Booking", backref="user", lazy=True)
+    bookings = db.relationship("Booking", backref="user", cascade="all, delete-orphan", passive_deletes=True)
+    employee = db.relationship("Employee",back_populates="user",uselist=False,cascade="all, delete-orphan")
+
 
 
 # Association table
@@ -96,6 +98,7 @@ class Employee(db.Model):
     __tablename__ = "employees"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer,db.ForeignKey('users.id', ondelete="CASCADE"),unique=True,nullable=False)
     full_name = db.Column(db.String(120), nullable=False)
     _is_active = db.Column("is_active", db.Boolean, default=True)
     work_start = db.Column(db.Time, nullable=False)
@@ -105,7 +108,8 @@ class Employee(db.Model):
     other_skills = db.Column(db.Text, nullable=True)
     employee_profile_picture = db.Column(db.String(256), nullable=True, default='https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=')
 
-    bookings = db.relationship("Booking", backref="employee", lazy=True)
+    bookings = db.relationship("Booking", backref="employee", cascade="all, delete-orphan", passive_deletes=True)
+    user = db.relationship("User", back_populates="employee")
 
     def is_available(self, booking_date, start_time, end_time, service=None):
         return is_employee_available(
@@ -139,15 +143,15 @@ class Booking(db.Model):
     __tablename__ = "bookings"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey("services.id"), nullable=False)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id", ondelete="CASCADE"), nullable=False)
     booking_date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     price = db.Column(db.Numeric(10, 2), nullable=False)
 
-    status = db.Column(db.Enum("pending","confirmed","in_progress","completed","cancelled",name="booking_status"),
+    status = db.Column(db.Enum("pending","confirmed","in_progress","completed","cancelled", "rescheduled",name="booking_status"),
     default="confirmed")
 
 

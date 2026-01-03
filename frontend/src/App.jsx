@@ -11,6 +11,8 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Service from './pages/Service'
 import { ServiceProvider } from './context/ServiceContext'
+import Booking from './pages/Booking'
+import { BookingProvider } from './context/BookingContext'
 
 function App() {
   
@@ -19,22 +21,27 @@ function App() {
   <BrowserRouter>
     <UserProvider>
       <ServiceProvider>
+        <BookingProvider>
 
-        <Routes>
-          <Route>
-            <Route path='/' element={<Layout/>}>
-            <Route index element={<Home/>}/>
-            <Route path='/about' element={<About/>}/>
-            <Route path='/contact' element={<Contact/>}/>
-            <Route path='/signup' element={<SignUp/>}/>
-            <Route path='/hero' element={<Hero/>}/>
-            <Route path='/login' element={<Login/>}/>
-            <Route path='/forgot-password' element={<ForgotPassword/>}/>
-            <Route path='/reset-password/:token' element={<ResetPassword/>}/>
-            <Route path='/service' element={<Service/>}/>
+          <Routes>
+            <Route>
+              <Route path='/' element={<Layout/>}>
+              <Route index element={<Home/>}/>
+              <Route path='/about' element={<About/>}/>
+              <Route path='/contact' element={<Contact/>}/>
+              <Route path='/signup' element={<SignUp/>}/>
+              <Route path='/hero' element={<Hero/>}/>
+              <Route path='/login' element={<Login/>}/>
+              <Route path='/forgot-password' element={<ForgotPassword/>}/>
+              <Route path='/reset-password/:token' element={<ResetPassword/>}/>
+              <Route path='/service' element={<Service/>}/>
+              <Route path='/book' element={<Booking/>}/>
+              </Route>
             </Route>
-          </Route>
-        </Routes>
+          </Routes>
+
+          
+        </BookingProvider>
       </ServiceProvider>
     </UserProvider>
   </BrowserRouter>

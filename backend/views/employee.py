@@ -1,4 +1,4 @@
-from models import db, Employee, Service
+from models import db, Employee, Service, User
 from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.constants import DAY_MAP, DAY_NAME_TO_NUM
@@ -12,7 +12,7 @@ employee_bp = Blueprint("employee_bp", __name__)
 @employee_bp.route("/employee", methods=["POST"])
 def add_employee():
     data = request.json
-
+    username = data.get("username")
     full_name = data.get("full_name")
     work_start_str = data.get("work_start")
     work_end_str = data.get("work_end")
@@ -22,10 +22,25 @@ def add_employee():
     override_active = data.get("override_active")
     employee_profile_picture = data.get('profile_picture', "https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=")
     is_active = data.get("is_active", True)
+    role = data.get("role") 
 
     # Validate required fields
-    if not all([full_name, work_start_str, work_end_str, work_days]):
+    if not all([full_name, work_start_str, work_end_str, work_days, username]):
         return jsonify({"error": "Missing required fields"}), 400
+    
+    # Validate role
+    if role not in ["beautician", "receptionist"]:
+        return jsonify({"error": "Role must be either 'beautician' or 'receptionist'"}), 400
+
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"error": "User with this username not found"}), 404
+
+    if user.employee:
+        return jsonify({"error": "This user is already an employee"}), 400
+
 
     # Convert times
     try:
@@ -42,6 +57,7 @@ def add_employee():
 
     # Create employee
     employee = Employee(
+        user_id=user.id,
         full_name=full_name,
         work_start=work_start,
         work_end=work_end,
@@ -52,8 +68,8 @@ def add_employee():
         other_skills=",".join(other_skills_list) if other_skills_list else None
     )
 
-    # Validate and assign existing service skills
-    if skills_names:
+   # Assign skills only if beautician
+    if role == "beautician" and skills_names:
         services = Service.query.filter(Service.title.in_(skills_names)).all()
         valid_titles = [s.title for s in services]
         invalid_skills = [name for name in skills_names if name not in valid_titles]
@@ -65,21 +81,38 @@ def add_employee():
             }), 400
 
         employee.skills.extend(services)
+    
 
-    # Save employee
-    db.session.add(employee)
-    db.session.commit()
+    if role == "receptionist" and skills_names:
+        return jsonify({"error": "Receptionists cannot have service skills"}), 400
+    
+    # THIS IS THE KEY PART: Set the appropriate role flag on the User
+    if role == "beautician":
+        user.is_beautician = True
+    elif role == "receptionist":
+        user.is_receptionist = True
 
-    # Prepare response with readable day names
+    # Save
+    try:
+        db.session.add(employee)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to create employee: {str(e)}"}), 500
+
+    # Response
     employee_data = {
         "id": employee.id,
+        "user_id": employee.user_id,
         "full_name": employee.full_name,
+        "role": role,
         "work_start": employee.work_start.strftime("%H:%M"),
         "work_end": employee.work_end.strftime("%H:%M"),
         "work_days": [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP],
-        "skills": [s.title for s in employee.skills],
+        "skills": [s.title for s in employee.skills] if role == "beautician" else [],
         "other_skills": employee.other_skills.split(",") if employee.other_skills else [],
-        "is_active": employee.is_active
+        "is_active": employee.is_active,
+        "profile_picture": employee.employee_profile_picture
     }
 
     return jsonify({"message": "Employee added successfully", "employee": employee_data}), 201
@@ -214,6 +247,9 @@ def delete_employee(employee_id):
 
     # Remove all skill associations
     employee.skills = []
+    user = employee.user
+    user.is_beautician = False
+
 
     # Delete employee
     db.session.delete(employee)

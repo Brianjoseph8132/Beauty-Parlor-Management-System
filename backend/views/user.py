@@ -62,7 +62,7 @@ def add_users():
         password=password,
         is_admin=is_admin,
         is_beautician=is_beautician,
-        is_receptionist=is_beautician,
+        is_receptionist=is_receptionist,
         profile_picture=profile_picture
     )
     db.session.add(new_user)
@@ -72,7 +72,59 @@ def add_users():
 
 
 
+# Delete
+@user_bp.route("/users/<int:user_id>", methods=["DELETE"])
+@jwt_required()
+def delete_users(user_id):
+    current_user_id = get_jwt_identity()
 
+    if user_id != current_user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    user = User.query.get_or_404(current_user_id)
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return jsonify({"success": "Deleted successfully"}), 200
+
+
+
+# Update User
+@user_bp.route('/update_profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json()
+
+    # Check if new username/email already exists
+    if "username" in data:
+        existing_user = User.query.filter_by(username=data["username"]).first()
+        if existing_user and existing_user.id != user_id:
+            return jsonify({'error': 'Username already taken'}), 400
+        user.username = data["username"]
+
+    if "email" in data:
+        existing_email = User.query.filter_by(email=data["email"]).first()
+        if existing_email and existing_email.id != user_id:
+            return jsonify({'error': 'Email already in use'}), 400
+        user.email = data["email"]
+
+    if "password" in data and data["password"]:
+        user.password = generate_password_hash(data["password"])
+
+    if "profile_picture" in data:
+        user.profile_picture = data["profile_picture"]
     
+    if "is_beautician" in data:
+        user.is_beautician = data["is_beautician"]
+
+    db.session.commit()
+    return jsonify({'success': 'Profile updated successfully'}), 200
 
 

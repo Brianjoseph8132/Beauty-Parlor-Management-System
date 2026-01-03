@@ -7,6 +7,9 @@ from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
 from flask_mail import Mail
 import os
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import sqlite3
 from flask_cors import CORS
 
 
@@ -58,6 +61,13 @@ app.register_blueprint(employee_bp)
 
 
 
+
+@event.listens_for(Engine, "connect")
+def enable_sqlite_fk(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
 
 
 

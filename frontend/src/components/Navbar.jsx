@@ -125,6 +125,17 @@ const Navbar = () => {
                     Service
                   </Link>
                   <Link
+                    to="/book"
+                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                    ${
+                      isActive("/book")
+                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                    }`}
+                  >
+                    Book Now
+                  </Link>
+                  <Link
                     to="/login"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                     ${

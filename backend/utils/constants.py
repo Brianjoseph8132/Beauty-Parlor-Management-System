@@ -3,6 +3,7 @@ from datetime import time
 SALON_OPEN = time(8, 0)
 SALON_CLOSE = time(22, 0)
 BUFFER_MINUTES = 10 
+RESCHEDULE_HOURS_BEFORE = 24 
 
 TIME_BLOCKS = {
     "morning": (time(8, 0), time(12, 0)),

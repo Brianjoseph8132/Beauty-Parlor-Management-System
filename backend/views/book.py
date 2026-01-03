@@ -2,7 +2,7 @@ from models import Booking,db, Employee, Service, User
 from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.availability import is_employee_available
-from utils.constants import SALON_CLOSE, SALON_OPEN, TIME_BLOCKS, BUFFER_MINUTES
+from utils.constants import SALON_CLOSE, SALON_OPEN, TIME_BLOCKS, BUFFER_MINUTES, RESCHEDULE_HOURS_BEFORE
 from datetime import datetime, date, timedelta
 from utils.slots import generate_service_slots, categorize_slot
 from flask_mail import  Message
@@ -191,6 +191,79 @@ Your Salon Team
         print(f"Error sending confirmation email: {str(e)}")
 
 
+
+@booking_bp.route("/bookings/preview", methods=["GET"])
+@jwt_required(optional=True)
+def booking_preview():
+    # Get query parameters from frontend
+    service_id = request.args.get("service_id", type=int)
+    date_str = request.args.get("date")  # YYYY-MM-DD
+    start_time_str = request.args.get("start_time")  # HH:MM
+    employee_id = request.args.get("employee_id", type=int)  # optional
+
+    if not all([service_id, date_str, start_time_str]):
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    try:
+        booking_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        start_time = datetime.strptime(start_time_str, "%H:%M").time()
+    except ValueError:
+        return jsonify({"error": "Invalid date or time format"}), 400
+
+    service = Service.query.get_or_404(service_id)
+
+    # Calculate end time (with buffer)
+    BUFFER_MINUTES = 10
+    start_datetime = datetime.combine(booking_date, start_time)
+    end_datetime = start_datetime + timedelta(minutes=service.duration_minutes + BUFFER_MINUTES)
+    end_time = end_datetime.time()
+
+    # Determine employee
+    selected_employee = None
+    if employee_id:
+        selected_employee = Employee.query.get(employee_id)
+        if not selected_employee or service not in selected_employee.skills:
+            return jsonify({"error": "Selected employee cannot perform this service"}), 400
+    else:
+        # Optional: auto-pick one available employee for display
+        available = Employee.query.filter(
+            Employee.skills.any(id=service.id)
+        ).all()
+        if available:
+            selected_employee = available[0]  # or pick randomly
+
+    # # You might have a Location model — adjust accordingly
+    # # For now, assuming salon has one main location
+    # location_name = "Poplar Beauty Palace"
+    # location_address = "1 Poplar Street, Noordwyk, Midrand, South Africa"
+
+    # Build response
+    preview = {
+        "service": {
+            "name": service.name,
+            "duration": f"{service.duration_minutes}min",
+            "price": f"R{service.price:.2f}" if hasattr(service, 'price') else "R280.00"
+        },
+        "date_time": {
+            "date": booking_date.strftime("%B %d, %Y"),  # e.g., December 17, 2025
+            "day": booking_date.strftime("%A"),         # e.g., Wednesday
+            "start_time": start_time.strftime("%I:%M %p"),
+            "end_time": end_time.strftime("%I:%M %p"),
+            "display": f"{booking_date.strftime('%B %d, %Y')} • {start_time.strftime('%I:%M %p')} - {end_time.strftime('%I:%M %p')}"
+        },
+        "employee": {
+            "name": selected_employee.full_name if selected_employee else "Any available stylist",
+            "id": selected_employee.id if selected_employee else None
+        },
+        "total_price": f"R{service.price:.2f}" if hasattr(service, 'price') else "R280.00"
+    }
+
+    return jsonify(preview), 200
+
+
+
+
+# All Booking 
 @booking_bp.route("/bookings", methods=["GET"])
 @jwt_required()
 def get_user_bookings():
@@ -219,110 +292,108 @@ def get_user_bookings():
 
 
 
-
-
-
-# @booking_bp.route("/api/bookings/<int:booking_id>/reschedule", methods=["PATCH"])
-# @jwt_required()
-# def reschedule_booking(booking_id):
-#     user_id = get_jwt_identity()
-#     data = request.get_json()
-
-#     booking = Booking.query.get_or_404(booking_id)
-
-#     if booking.user_id != user_id:
-#         return jsonify({"error": "Unauthorized"}), 403
-
-#     if booking.status != "confirmed":
-#         return jsonify({"error": "Only confirmed bookings can be rescheduled"}), 400
-
-#     date_str = data.get("date")
-#     start_str = data.get("start_time")
-#     employee_id = data.get("employee_id")
-
-#     booking_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-#     start_time = datetime.strptime(start_str, "%H:%M").time()
-
-#     duration = booking.end_time.hour * 60 + booking.end_time.minute - (
-#         booking.start_time.hour * 60 + booking.start_time.minute
-#     )
-
-#     start_minutes = start_time.hour * 60 + start_time.minute
-#     end_time = (datetime.min + timedelta(minutes=start_minutes + duration)).time()
-
-#     # Auto-assign employee if needed
-#     if not employee_id:
-#         employee = find_available_employee(
-#             booking.service_id,
-#             booking.location_id,
-#             booking_date,
-#             start_time,
-#             end_time
-#         )
-
-#         if not employee:
-#             return jsonify({"error": "No available employee"}), 409
-
-#         employee_id = employee.id
-
-#     # Overlap check
-#     overlap = Booking.query.filter(
-#         Booking.employee_id == employee_id,
-#         Booking.booking_date == booking_date,
-#         Booking.start_time < end_time,
-#         Booking.end_time > start_time,
-#         Booking.id != booking.id
-#     ).first()
-
-#     if overlap:
-#         return jsonify({"error": "Time slot already booked"}), 409
-
-#     booking.booking_date = booking_date
-#     booking.start_time = start_time
-#     booking.end_time = end_time
-#     booking.employee_id = employee_id
-
-#     db.session.commit()
-
-#     return jsonify({"message": "Booking rescheduled"})
-
-
-
-
-
-# @booking_bp.route("/api/bookings/<int:booking_id>/cancel", methods=["PATCH"])
-# @jwt_required()
-# def cancel_booking(booking_id):
-#     user_id = get_jwt_identity()
-#     booking = Booking.query.get_or_404(booking_id)
-
-#     if booking.user_id != user_id:
-#         return jsonify({"error": "Unauthorized"}), 403
-
-#     if booking.status == "completed":
-#         return jsonify({"error": "Completed booking cannot be cancelled"}), 400
-
-#     booking.status = "cancelled"
-#     db.session.commit()
-
-#     return jsonify({"message": "Booking cancelled"})
-
-
-
-
-@booking_bp.route("/available-slots", methods=["GET"])
+# Cacellation
+@booking_bp.route("/bookings/cancel/<int:booking_id>", methods=["PATCH"])
 @jwt_required()
+def cancel_booking(booking_id):
+    user_id = get_jwt_identity()
+
+    booking = Booking.query.get_or_404(booking_id)
+
+    if booking.user_id != user_id:
+        return jsonify({"error": "You do not have permission to cancel this booking"}), 403
+
+    if booking.status not in ["confirmed", "rescheduled"]:
+        return jsonify({"error": "This booking cannot be cancelled"}), 400
+
+    booking_start = datetime.combine(
+        booking.booking_date,
+        booking.start_time
+    )
+
+    now = datetime.utcnow()
+
+    if (booking_start - now).total_seconds() < 24 * 3600:
+        return jsonify({
+            "error": "Cannot cancel within 24 hours of the appointment"
+        }), 403
+
+    booking.status = "cancelled"
+    db.session.commit()
+
+    customer = User.query.get(user_id)
+    employee = booking.employee
+    service = booking.service
+
+    if customer and customer.email:
+        send_cancellation_email_to_customer(
+            customer, booking, service, employee
+        )
+
+    if employee.user and employee.user.email:
+        send_cancellation_email_to_employee(
+            employee.user, booking, service, customer
+        )
+
+    return jsonify({
+        "message": "Booking cancelled successfully",
+        "booking_id": booking.id,
+        "cancelled_date": booking.booking_date.strftime("%Y-%m-%d"),
+        "cancelled_time": f"{booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}"
+    }), 200
+
+
+
+def send_cancellation_email_to_customer(customer, booking, service, employee):
+    msg = Message(
+        subject="Your Booking Has Been Cancelled",
+        recipients=[customer.email],
+        body=f"""
+        Hello {customer.username or 'there'},
+
+        Your appointment has been cancelled as requested.
+
+        Service: {service.title}
+        Date: {booking.booking_date.strftime('%Y-%m-%d')}
+        Time: {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}
+        Employee: {employee.full_name}
+
+        We're sorry to miss you this time. Feel free to book a new appointment whenever you're ready!
+
+        Best regards,
+        Your Salon/Team
+        Contact: support@yourdomain.com | +1 (555) 123-4567
+        """
+    )
+    mail.send(msg)
+
+def send_cancellation_email_to_employee(employee_user, booking, service, customer):
+    msg = Message(
+        subject="Appointment Cancelled",
+        recipients=[employee_user.email],
+        body=f"""
+        Hello {employee_user.username or 'there'},
+
+        A booking has been cancelled:
+
+        Service: {service.title}
+        Customer: {customer.username or 'Client'}
+        Date: {booking.booking_date.strftime('%Y-%m-%d')}
+        Time: {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}
+
+        The time slot is now free.
+
+        Best regards,
+        Your Salon/Team
+        """
+    )
+    mail.send(msg)
+
+
+
+# Slots
+@booking_bp.route("/available-slots", methods=["GET"])
 def available_slots():
-    """
-    Get available time slots for a specific service and date.
-    
-    Query Parameters:
-        - service_id: ID of the service
-        - date: Booking date in YYYY-MM-DD format
-    
-    Returns:
-        JSON with slots categorized by time of day (morning/afternoon/evening)
-    """
     service_id = request.args.get("service_id")
     date_str = request.args.get("date")
 
@@ -368,7 +439,7 @@ def available_slots():
     # Check each slot for availability
     for start_time, end_time in all_slots:
         # Calculate end time with buffer for availability checking
-        start_datetime = datetime.combine(date.today(), start_time)
+        start_datetime = datetime.combine(booking_date, start_time)
         end_with_buffer = (start_datetime + timedelta(
             minutes=service.duration_minutes + BUFFER_MINUTES
         )).time()
@@ -420,39 +491,229 @@ def available_slots():
 
 
 
+# Complete
+@booking_bp.route("/bookings/complete/<int:booking_id>", methods=["PATCH"])
+@jwt_required()
+def complete_service(booking_id):
+    current_user_id = get_jwt_identity()  # This is the logged-in user's ID
+
+    booking = Booking.query.get_or_404(booking_id)
+
+    # Only allow if booking is in_progress
+    if booking.status != "in_progress":
+        return jsonify({"error": "Booking is not in progress"}), 400
+
+    # Security: Only the assigned employee can complete it
+    if not booking.employee or booking.employee.user_id != current_user_id:
+        return jsonify({"error": "You are not authorized to complete this booking"}), 403
+
+    # Update booking
+    booking.status = "completed"
+    booking.completed_by = booking.employee.full_name
+    booking.completed_at = datetime.utcnow()
+
+    db.session.commit()
+
+    
+    return jsonify({
+        "message": "Service completed successfully",
+        "booking_id": booking.id,
+        "service": booking.service.name,
+        "customer": customer.username if customer else "Unknown",
+        "completed_at": booking.completed_at.isoformat()
+    }), 200
 
 
-# @booking_bp.route("/api/bookings/<int:id>/complete", methods=["PATCH"])
-# @jwt_required()
-# def complete_service(id):
-#     booking = Booking.query.get_or_404(id)
-
-#     if booking.status != "in_progress":
-#         return jsonify({"error": "Booking not in progress"}), 400
-
-#     booking.status = "completed"
-#     booking.completed_by = booking.employee.full_name
-#     booking.completed_at = datetime.utcnow()
-
-#     db.session.commit()
-
-#     return jsonify({"message": "Service completed"})
 
 
 
 
+# Started
+@booking_bp.route("/bookings/start/<int:booking_id>", methods=["PATCH"])
+@jwt_required()
+def start_service(booking_id):
+    current_user_id = get_jwt_identity()  # Logged-in user's ID
+
+    booking = Booking.query.get_or_404(booking_id)
+
+    # Only allow if currently confirmed
+    if booking.status != "confirmed":
+        return jsonify({"error": "Booking is not confirmed and cannot be started"}), 400
+
+    # Only the assigned employee can start the service
+    if not booking.employee or booking.employee.user_id != current_user_id:
+        return jsonify({"error": "You are not authorized to start this booking"}), 403
+
+    # Check if the appointment time has arrived (prevent starting too early)
+    # now = datetime.now()
+    # appointment_start = datetime.combine(booking.booking_date, booking.start_time)
+    # if now < appointment_start - timedelta(minutes=15):  # e.g., allow 15 min early
+    #     return jsonify({"error": "Cannot start service too early"}), 400
+
+    # Update status
+    booking.status = "in_progress"
+    booking.started_at = datetime.utcnow()  # Nice to track when it actually started
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Service started successfully",
+        "booking_id": booking.id,
+        "service": booking.service.title,
+        "customer": booking.user.username if booking.user else "Unknown",
+        "started_at": booking.started_at.isoformat()
+    }), 200
 
 
+# Reschedule
+@booking_bp.route("/bookings/reschedule/<int:booking_id>", methods=["PATCH"])
+@jwt_required()
+def reschedule_booking(booking_id):
+    user_id = get_jwt_identity()
+    data = request.get_json()
 
-# @booking_bp.route("/api/bookings/<int:id>/start", methods=["PATCH"])
-# @jwt_required()
-# def start_service(id):
-#     booking = Booking.query.get_or_404(id)
+    # Fetch the booking
+    booking = Booking.query.get_or_404(booking_id)
 
-#     if booking.status != "confirmed":
-#         return jsonify({"error": "Cannot start booking"}), 400
+    # Security: Only owner can reschedule
+    if booking.user_id != user_id:
+        return jsonify({"error": "You do not have permission to reschedule this booking"}), 403
 
-#     booking.status = "in_progress"
-#     db.session.commit()
+    # Only confirmed bookings can be rescheduled
+    if booking.status != "confirmed":
+        return jsonify({"error": "This booking cannot be rescheduled"}), 400
 
-#     return jsonify({"message": "Service started"})
+    # 24-hour deadline
+    booking_start = datetime.combine(booking.booking_date, booking.start_time)
+    now = datetime.now()
+    if (booking_start - now).total_seconds() < 24 * 3600:
+        return jsonify({"error": "Cannot reschedule within 24 hours of the appointment"}), 403
+
+    # Required fields
+    required_fields = ["date", "start_time"]
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields (date and start_time)"}), 400
+
+    try:
+        new_date = datetime.strptime(data["date"], "%Y-%m-%d").date()
+        new_start_time = datetime.strptime(data["start_time"], "%H:%M").time()
+    except ValueError:
+        return jsonify({"error": "Invalid date or time format"}), 400
+
+    # Service and buffer
+    service = booking.service
+    BUFFER_MINUTES = 10
+
+    new_start_datetime = datetime.combine(new_date, new_start_time)
+    new_end_datetime = new_start_datetime + timedelta(minutes=service.duration_minutes + BUFFER_MINUTES)
+    new_end_time = new_end_datetime.time()
+
+    # Optional preferred employee
+    preferred_employee_id = data.get("employee_id")
+
+    # Start transaction
+    # with db.session.begin():
+    available_employees = []
+
+    # Try preferred employee first
+    if preferred_employee_id:
+        preferred_emp = Employee.query.get(preferred_employee_id)
+        if preferred_emp and service in preferred_emp.skills:
+            if preferred_emp.is_available(new_date, new_start_time, new_end_datetime.time()):
+                available_employees.append(preferred_emp)
+
+    # If no preferred or unavailable, find any available
+    if not available_employees:
+        qualified_employees = Employee.query.filter(
+            Employee.skills.any(id=service.id)
+        ).order_by(db.func.random()).all()
+
+        for emp in qualified_employees:
+            if emp.is_available(new_date, new_start_time, new_end_datetime.time()):
+                available_employees.append(emp)
+
+    if not available_employees:
+        return jsonify({"error": "No available employee for the requested time"}), 409
+
+    # Pick the first available
+    selected_employee = available_employees[0]
+
+    # Update booking
+    booking.booking_date = new_date
+    booking.start_time = new_start_time
+    booking.end_time = new_end_time
+    booking.employee_id = selected_employee.id
+    booking.status = "rescheduled"
+
+    db.session.commit()
+
+    # Fetch user (customer)
+    customer = User.query.get(user_id)
+
+    # Send email to CUSTOMER (user)
+    if customer and customer.email:
+        send_reschedule_email_to_customer(customer, booking, service, selected_employee, preferred_employee_id)
+
+    # Send email to EMPLOYEE (via their linked user)
+    if selected_employee.user and selected_employee.user.email:
+        send_reschedule_email_to_employee(selected_employee.user, booking, service, customer)
+
+    return jsonify({
+        "message": "Booking rescheduled successfully",
+        "booking_id": booking.id,
+        "new_date": new_date.strftime("%Y-%m-%d"),
+        "new_start_time": new_start_time.strftime("%H:%M"),
+        "new_end_time": new_end_time.strftime("%H:%M"),
+        "employee": selected_employee.full_name,
+        "employee_id": selected_employee.id
+    }), 200
+
+
+# Email to customer (user)
+def send_reschedule_email_to_customer(customer, booking, service, employee, preferred_employee_id):
+    is_preferred = preferred_employee_id and int(preferred_employee_id) == employee.id
+
+    msg = Message(
+        subject="Your Booking Has Been Rescheduled",
+        recipients=[customer.email],
+        body=f"""
+        Hello {customer.username or 'there'},
+
+        Your appointment has been successfully rescheduled!
+
+        Service: {service.title}
+        New Date: {booking.booking_date.strftime('%Y-%m-%d')}
+        New Time: {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}
+        Employee: {employee.full_name} {'(your preferred employee)' if is_preferred else '(auto-assigned)'}
+
+        Thank you for booking with us!
+        Best regards,
+        Your Salon/Team
+        """
+    )
+    mail.send(msg)
+
+
+# Email to employee (using employee.user)
+def send_reschedule_email_to_employee(employee_user, booking, service, customer):
+    msg = Message(
+        subject="Appointment Rescheduled",
+        recipients=[employee_user.email],
+        body=f"""
+        Hello {employee_user.username or 'there'},
+
+        A booking for your services has been rescheduled:
+
+        Service: {service.title}
+        Customer: {customer.username or 'Client'}
+        New Date: {booking.booking_date.strftime('%Y-%m-%d')}
+        New Time: {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}
+
+        Please ensure you're available at this time.
+        Thank you for your great work!
+
+        Best regards,
+        Your Salon/Team
+        """
+    )
+    mail.send(msg)
