@@ -8,12 +8,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 const Booking = () => {
   const [viewMode, setViewMode] = useState("week"); // "week" or "month"
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState("8:30 am - 10:00 am");
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date(2025, 11, 30));
 
-  const { slots, setServiceId, setDate } = useContext(BookingContext);
+  const { slots, setServiceId, setDate, createBooking,fetchBookingPreview,clearBookingPreview,bookingPreview,previewError,previewLoading } = useContext(BookingContext);
   const location = useLocation();
-  console.log("BOOKING LOCATION STATE:", location.state);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,6 +37,29 @@ const Booking = () => {
     console.log("SETTING DATE:", formattedDate);
     setDate(formattedDate);
   }, [selectedDate]);
+
+
+  // Fetch booking preview when date and time slot are selected
+  useEffect(() => {
+    if (selectedDate && selectedSlot && serviceId) {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      
+      fetchBookingPreview({
+        serviceId: serviceId,
+        date: formattedDate,
+        startTime: selectedSlot.start_time,
+        employeeId: selectedSlot.employee_id || null,
+      });
+    }
+  }, [selectedDate, selectedSlot, serviceId]);
+
+  // Clear preview when component unmounts
+  useEffect(() => {
+    return () => {
+      clearBookingPreview();
+    };
+  }, [clearBookingPreview]);
+
 
 
   // Booking details
@@ -117,9 +140,62 @@ const Booking = () => {
     setSelectedDate(newDate);
   };
 
+  const handleTimeSlotClick = (slot) => {
+    const label = `${slot.start_time} - ${slot.end_time}`;
+    setSelectedTime(label);
+    setSelectedSlot(slot);
+  };
+
   const weekDays = getWeekDays(currentWeekStart);
   const monthDays = getDaysInMonth(selectedDate);
   const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const handleConfirmBooking = async () => {
+    if (!selectedSlot || !serviceId || !selectedDate) return;
+
+    try {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+
+      await createBooking({
+        serviceId,
+        date: formattedDate,
+        startTime: selectedSlot.start_time,
+        employeeId: selectedSlot.employee_id || null,
+      });
+
+      navigate("/booking-success");
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+
+  const getEmployeeName = () => {
+    // First priority: From booking preview API
+    if (bookingPreview?.employee?.name) {
+      return bookingPreview.employee.name;
+    }
+    // Second priority: From selected slot (available immediately)
+    if (selectedSlot?.employee_name) {
+      return selectedSlot.employee_name;
+    }
+    // Fallback: Default
+    return "Poplar Beauty Salon";
+  };
+
+  const displayDetails = {
+    employee: {
+      name: getEmployeeName(),
+      id: bookingPreview?.employee?.id || selectedSlot?.employee_id || null
+    },
+    service: {
+      name: bookingPreview?.service?.name || title || "Service",
+      duration: bookingPreview?.service?.duration || duration || "N/A",
+      price: bookingPreview?.service?.price || price || "R0.00"
+    },
+    date_time: bookingPreview?.date_time,
+    total_price: bookingPreview?.total_price || price || "R0.00"
+  };
 
   return (
     <div className="min-h-screen bg-[#EFD09E] py-20 px-4 sm:px-6 lg:px-8 relative">
@@ -261,13 +337,14 @@ const Booking = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allSlots.map((slot) => {
                     const label = `${slot.start_time} - ${slot.end_time}`;
+                    const isSelected = selectedTime === label;
 
                     return (
                       <motion.button
                         key={`${slot.start_time}-${slot.employee_id}`}
-                        onClick={() => setSelectedTime(label)}
+                        onClick={() => handleTimeSlotClick(slot)}
                         className={`px-4 py-3 rounded-lg font-medium text-sm transition ${
-                          selectedTime === label
+                          isSelected
                             ? "bg-[#D4AA7D] text-[#272727] shadow-lg"
                             : "bg-[#EFD09E]/10 text-[#EFD09E] hover:bg-[#EFD09E]/20 border border-[#D4AA7D]/20"
                         }`}
@@ -295,8 +372,7 @@ const Booking = () => {
                   <Briefcase className="w-5 h-5 text-[#D4AA7D] mt-1" />
                   <div>
                     <p className="text-sm text-[#EFD09E]/70 mb-1">Employee</p>
-                    <p className="font-semibold text-[#EFD09E]">{bookingDetails.employee}</p>
-                    <p className="text-sm text-[#EFD09E]/70">{bookingDetails.tier}</p>
+                    <p className="font-semibold text-[#EFD09E]">{displayDetails.employee?.name || "Popular Beauty Salon"}</p>
                   </div>
                 </div>
               </div>
@@ -321,10 +397,10 @@ const Booking = () => {
                     <p className="text-sm text-[#EFD09E]/70 mb-1">Service</p>
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-semibold text-[#EFD09E]">{bookingDetails.service}</p>
-                        <p className="text-sm text-[#EFD09E]/70">{bookingDetails.duration}</p>
+                        <p className="font-semibold text-[#EFD09E]">{displayDetails.service ?.name || title}</p>
+                        <p className="text-sm text-[#EFD09E]/70">{displayDetails.service ?.duration ||duration}</p>
                       </div>
-                      <p className="text-[#D4AA7D] font-bold">{bookingDetails.price}</p>
+                      <p className="text-[#D4AA7D] font-bold">{displayDetails.service ?.price || price}</p>
                     </div>
                   </div>
                 </div>
@@ -337,13 +413,17 @@ const Booking = () => {
                   <div>
                     <p className="text-sm text-[#EFD09E]/70 mb-1">Date & Time</p>
                     <p className="font-semibold text-[#EFD09E]">
-                      {selectedDate.toLocaleDateString("en-US", { 
-                        month: "long", 
-                        day: "numeric", 
-                        year: "numeric" 
-                      })}
+                      {bookingPreview?.date_time?.display || 
+                        selectedDate.toLocaleDateString("en-US", { 
+                          month: "long", 
+                          day: "numeric", 
+                          year: "numeric" 
+                        })
+                      }
                     </p>
-                    <p className="text-sm text-[#EFD09E]/70">{selectedTime}</p>
+                    {!bookingPreview && selectedTime && (
+                      <p className="text-sm text-[#EFD09E]/70">{selectedTime}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -354,11 +434,12 @@ const Booking = () => {
                   <CreditCard className="w-5 h-5 text-[#D4AA7D]" />
                   <p className="text-sm text-[#EFD09E]/70">Total Price</p>
                 </div>
-                <p className="text-3xl font-bold text-[#D4AA7D]">{bookingDetails.price}</p>
+                <p className="text-3xl font-bold text-[#D4AA7D]">{displayDetails.total_price || price}</p>
               </div>
 
               {/* Book Button */}
               <motion.button
+                onclick = {handleConfirmBooking}
                 className="w-full bg-[#D4AA7D] text-[#272727] px-6 py-4 rounded-xl font-semibold text-lg hover:bg-[#272727] hover:text-[#EFD09E] transition"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

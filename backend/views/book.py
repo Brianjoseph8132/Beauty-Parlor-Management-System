@@ -240,7 +240,7 @@ def booking_preview():
     # Build response
     preview = {
         "service": {
-            "name": service.name,
+            "title": service.title,
             "duration": f"{service.duration_minutes}min",
             "price": f"R{service.price:.2f}" if hasattr(service, 'price') else "R280.00"
         },
