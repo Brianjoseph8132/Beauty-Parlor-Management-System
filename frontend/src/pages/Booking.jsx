@@ -439,7 +439,7 @@ const Booking = () => {
 
               {/* Book Button */}
               <motion.button
-                onclick = {handleConfirmBooking}
+                onClick = {handleConfirmBooking}
                 className="w-full bg-[#D4AA7D] text-[#272727] px-6 py-4 rounded-xl font-semibold text-lg hover:bg-[#272727] hover:text-[#EFD09E] transition"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

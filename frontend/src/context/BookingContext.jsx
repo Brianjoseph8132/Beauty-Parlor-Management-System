@@ -16,6 +16,7 @@ export const BookingProvider = ({children}) => {
     const [bookingPreview, setBookingPreview] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false)
     const [previewError, setPreviewError] = useState(null);
+    const [appointments, setAppointments] = useState([])
     const navigate = useNavigate()
 
 
@@ -131,6 +132,72 @@ export const BookingProvider = ({children}) => {
     };
 
 
+    // ===============Appointmnets=======
+    useEffect(() => {
+        if (!authToken) return;
+
+        fetch("http://127.0.0.1:5000/bookings", {
+            headers: {
+            Authorization: `Bearer ${authToken}`,
+            },
+        })
+            .then((res) => res.json())
+            .then((data) => {
+            setAppointments(data);
+            })
+            .catch((err) => console.error("Error fetching appointments:", err));
+        }, [authToken, onchange]);
+
+
+
+
+        // =============Receipt ==========
+        const downloadReceipt = async (bookingId) => {
+            const toastId = toast.loading("Downloading receipt...");
+
+            try {
+                const response = await fetch(
+                    `http://localhost:5000/receipts/${bookingId}`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${authToken}`,
+                        },
+                    }
+                );
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Failed to download receipt");
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `receipt-BK${String(bookingId).padStart(6, "0")}.pdf`;
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                window.URL.revokeObjectURL(url);
+
+                toast.dismiss(toastId);
+                toast.success("Receipt downloaded successfully");
+                
+                setOnChange(prev => !prev);
+
+                return { success: true };
+
+            } catch (err) {
+                toast.dismiss(toastId);
+                toast.error(err.message || "Download failed");
+                return { success: false, error: err.message };
+            }
+        };
+
 
     const data = {
         slots,
@@ -141,7 +208,10 @@ export const BookingProvider = ({children}) => {
         clearBookingPreview,
         bookingPreview,
         previewError,
-        previewLoading
+        previewLoading,
+        appointments,
+        setAppointments,
+        downloadReceipt
     }
 
     return (

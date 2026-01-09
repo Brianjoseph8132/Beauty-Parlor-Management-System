@@ -264,7 +264,47 @@ export const UserProvider = ({ children }) => {
     };
 
 
-
+    // Update User
+    const updateUser = (user_id, username, email, password, profile_picture) => {
+        console.log("Updating user:", { user_id, username, email });
+        toast.loading("Updating user...");
+        
+        fetch("http://127.0.0.1:5000/update_profile", {
+            method: "PUT", 
+            headers: {
+                'Content-type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                user_id:user_id,
+                username: username,
+                email: email,
+                ...(password && { password: password }), // Only include if provided
+                profile_picture: profile_picture
+            })
+        })
+        .then((resp) => {
+            if (!resp.ok) {
+                throw new Error(`HTTP error! status: ${resp.status}`);
+            }
+            return resp.json();
+        })
+        .then((response) => {
+            toast.dismiss();
+            if (response.success && response.updatedUser) {
+                // ✅ Update the current user in context
+                setCurrentUser(response.updatedUser);
+                toast.success("User updated successfully!");
+            } else {
+                toast.error(response.error || "Failed to update user.");
+            }
+        })
+        .catch((error) => {
+            toast.dismiss();
+            console.error("Update user error:", error);
+            toast.error("An error occurred: " + error.message);
+        });
+    };
 
 
     const data = {
@@ -273,7 +313,9 @@ export const UserProvider = ({ children }) => {
         login,
         login_with_google,
         addUser,
-        logout
+        logout,
+        updateUser,
+        setCurrentUser
         
     };
 

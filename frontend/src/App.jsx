@@ -13,6 +13,11 @@ import Service from './pages/Service'
 import { ServiceProvider } from './context/ServiceContext'
 import Booking from './pages/Booking'
 import { BookingProvider } from './context/BookingContext'
+import Thanks from './pages/Thanks'
+import AppointmentHistory from './pages/AppointmentHistory'
+import Profile from './pages/Profile'
+import { EmployeeProvider } from './context/EmployeeContext'
+import AppointmentReminder from './components/AppointmentReminder'
 
 function App() {
   
@@ -22,25 +27,30 @@ function App() {
     <UserProvider>
       <ServiceProvider>
         <BookingProvider>
+          <EmployeeProvider>
 
-          <Routes>
-            <Route>
-              <Route path='/' element={<Layout/>}>
-              <Route index element={<Home/>}/>
-              <Route path='/about' element={<About/>}/>
-              <Route path='/contact' element={<Contact/>}/>
-              <Route path='/signup' element={<SignUp/>}/>
-              <Route path='/hero' element={<Hero/>}/>
-              <Route path='/login' element={<Login/>}/>
-              <Route path='/forgot-password' element={<ForgotPassword/>}/>
-              <Route path='/reset-password/:token' element={<ResetPassword/>}/>
-              <Route path='/service' element={<Service/>}/>
-              <Route path='/book' element={<Booking/>}/>
+            <Routes>
+              <Route>
+                <Route path='/' element={<Layout/>}>
+                <Route index element={<Home/>}/>
+                <Route path='/about' element={<About/>}/>
+                <Route path='/contact' element={<Contact/>}/>
+                <Route path='/signup' element={<SignUp/>}/>
+                <Route path='/hero' element={<Hero/>}/>
+                <Route path='/login' element={<Login/>}/>
+                <Route path='/forgot-password' element={<ForgotPassword/>}/>
+                <Route path='/reset-password/:token' element={<ResetPassword/>}/>
+                <Route path='/service' element={<Service/>}/>
+                <Route path='/book' element={<Booking/>}/>
+                <Route path='/booking-success' element={<Thanks/>}/>
+                <Route path='/history' element={<AppointmentHistory/>}/>
+                <Route path='/profile' element={<Profile/>}/>
+                <Route path='/reminder' element={<AppointmentReminder/>}/>
+                </Route>
               </Route>
-            </Route>
-          </Routes>
+            </Routes>
 
-          
+          </EmployeeProvider>
         </BookingProvider>
       </ServiceProvider>
     </UserProvider>

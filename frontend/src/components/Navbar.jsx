@@ -31,25 +31,28 @@ const Navbar = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             {/* Logo Section */}
-            <motion.div
-              className="flex items-center space-x-2 -ml-3"
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 100,
-                damping: 10,
-                delay: 0.3,
-              }}
-            >
-              <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.6 }}>
-                <Sparkles className="h-8 w-8 text-[#D4AA7D]" />
-              </motion.div>
+            <Link
+             to="/">
+              <motion.div
+                className="flex items-center space-x-2 -ml-3"
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 10,
+                  delay: 0.3,
+                }}
+              >
+                <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.6 }}>
+                  <Sparkles className="h-8 w-8 text-[#D4AA7D]" />
+                </motion.div>
 
-              <div className="font-playfair text-3xl font-bold text-[#D4AA7D] tracking-wider drop-shadow-sm">
-                BPMS
-              </div>
-            </motion.div>
+                <div className="font-playfair text-3xl font-bold text-[#D4AA7D] tracking-wider drop-shadow-sm">
+                  BPMS
+                </div>
+              </motion.div>
+            </Link>
 
             {/* Desktop Nav Links */}
             <motion.div
@@ -77,6 +80,28 @@ const Navbar = () => {
                     }`}
                   >
                     Home
+                  </Link>
+                  <Link
+                    to="/history"
+                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                    ${
+                      isActive("/history")
+                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                    }`}
+                  >
+                    History
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                    ${
+                      isActive("/profile")
+                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                    }`}
+                  >
+                    Profile
                   </Link>
                   <motion.button
                     onClick={logout}
@@ -124,17 +149,28 @@ const Navbar = () => {
                   >
                     Service
                   </Link>
-                  <Link
-                    to="/book"
+                  {/* <Link
+                    to="/reminder"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                     ${
-                      isActive("/book")
+                      isActive("/reminder")
                         ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
                         : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                     }`}
                   >
-                    Book Now
-                  </Link>
+                    Reminder
+                  </Link> */}
+                  {/* <Link
+                    to="/profile"
+                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+                    ${
+                      isActive("/profile")
+                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+                    }`}
+                  >
+                    Profile
+                  </Link> */}
                   <Link
                     to="/login"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
