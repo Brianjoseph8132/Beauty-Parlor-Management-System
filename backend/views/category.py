@@ -29,7 +29,7 @@ def add_category():
     db.session.commit()
 
     return jsonify({
-        "success": f"Category '{new_category.name}' added successfully",
+        "success": f"Category added successfully",
     }), 201
 
 
@@ -62,7 +62,7 @@ def delete_category_by_name(category_name):
     db.session.commit()
 
     return jsonify({
-        "message": f"Category '{category.name}' deleted successfully"
+        "success": f"Category  deleted successfully"
     }), 200
 
 

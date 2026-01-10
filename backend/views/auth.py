@@ -83,7 +83,8 @@ def current_user():
             'username':user.username,
             'is_admin':user.is_admin,
             "is_beautician": user.is_beautician,
-            "is_receptionist": user.is_receptionist
+            "is_receptionist": user.is_receptionist,
+            "profile_picture": user.profile_picture
         }
 
     return jsonify(user_data)

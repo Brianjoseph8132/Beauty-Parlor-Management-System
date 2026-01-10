@@ -7,15 +7,16 @@ from datetime import datetime, date, timedelta
 from utils.slots import generate_service_slots, categorize_slot
 from flask_mail import  Message
 from app import mail
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import io
+from .receipt import generate_receipt_pdf
+from sqlalchemy.orm import joinedload
 # from decorator import admin_required
 
 
 booking_bp = Blueprint("booking_bp", __name__)
 
-# # Configuration constants
-# SALON_OPEN_TIME = time(8, 0)
-# SALON_CLOSE_TIME = time(22, 0)
-# BUFFER_MINUTES = 10  # Buffer time between appointments
 
 @booking_bp.route("/bookings", methods=["POST"])
 @jwt_required()
@@ -132,7 +133,7 @@ def create_booking():
             print(f"Failed to send confirmation email: {str(e)}")
 
         return jsonify({
-            "message": "Booking confirmed",
+            "success": "Booking confirmed",
             "booking_id": booking.id,
             "employee_id": assigned_employee.id,
             "employee_name": assigned_employee.full_name,
@@ -269,7 +270,7 @@ def booking_preview():
 def get_user_bookings():
     """Get all bookings for the current user"""
     user_id = get_jwt_identity()
-    status_filter = request.args.get("status")  # Optional: filter by status
+    status_filter = request.args.get("status")  
     
     query = Booking.query.filter_by(user_id=user_id)
     
@@ -336,7 +337,7 @@ def cancel_booking(booking_id):
         )
 
     return jsonify({
-        "message": "Booking cancelled successfully",
+        "success": "Booking cancelled successfully",
         "booking_id": booking.id,
         "cancelled_date": booking.booking_date.strftime("%Y-%m-%d"),
         "cancelled_time": f"{booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}"
@@ -495,15 +496,15 @@ def available_slots():
 @booking_bp.route("/bookings/complete/<int:booking_id>", methods=["PATCH"])
 @jwt_required()
 def complete_service(booking_id):
-    current_user_id = get_jwt_identity()  # This is the logged-in user's ID
+    current_user_id = get_jwt_identity()
 
     booking = Booking.query.get_or_404(booking_id)
 
-    # Only allow if booking is in_progress
+    # Only allow if booking is in progress
     if booking.status != "in_progress":
         return jsonify({"error": "Booking is not in progress"}), 400
 
-    # Security: Only the assigned employee can complete it
+    # Only assigned employee can complete
     if not booking.employee or booking.employee.user_id != current_user_id:
         return jsonify({"error": "You are not authorized to complete this booking"}), 403
 
@@ -514,15 +515,61 @@ def complete_service(booking_id):
 
     db.session.commit()
 
-    
+    # Get customer
+    customer = booking.user  # assumes relationship exists
+
+    # Generate PDF receipt
+    pdf_buffer = generate_receipt_pdf(booking, customer)
+
+    # Send receipt email
+    try:
+        send_receipt_email(customer, booking, pdf_buffer)
+    except Exception as e:
+        # Log error but do NOT fail completion
+        print("Receipt email failed:", str(e))
+
     return jsonify({
-        "message": "Service completed successfully",
+        "success": "Service completed successfully",
         "booking_id": booking.id,
-        "service": booking.service.name,
-        "customer": customer.username if customer else "Unknown",
-        "completed_at": booking.completed_at.isoformat()
+        "receipt_sent": True,
+        "completed_at": booking.completed_at.isoformat(),
     }), 200
 
+
+
+
+
+def send_receipt_email(user, booking, pdf_buffer):
+    msg = Message(
+        subject="Your Service Receipt – Poplar Beauty Place",
+        recipients=[user.email],
+    )
+
+    msg.body = f"""
+Hi {user.username},
+
+Thank you for choosing Poplar Beauty Place.
+
+Your service "{booking.service.title}" has been completed successfully.
+Please find your receipt attached.
+
+Service: {booking.service.title}
+Employee: {booking.employee.full_name}
+Date: {booking.booking_date.strftime('%d %b %Y')} | Time: {booking.start_time.strftime('%H:%M')}
+Amount Paid: R{booking.price:.2f}
+
+We look forward to serving you again.
+
+— Poplar Beauty Place
+"""
+
+    msg.attach(
+        filename=f"receipt-BK{booking.id:06d}.pdf",
+        content_type="application/pdf",
+        data=pdf_buffer.getvalue(),
+    )
+
+    mail.send(msg)
 
 
 
@@ -557,7 +604,7 @@ def start_service(booking_id):
     db.session.commit()
 
     return jsonify({
-        "message": "Service started successfully",
+        "success": "Service started successfully",
         "booking_id": booking.id,
         "service": booking.service.title,
         "customer": booking.user.username if booking.user else "Unknown",
@@ -645,6 +692,8 @@ def reschedule_booking(booking_id):
     booking.employee_id = selected_employee.id
     booking.status = "rescheduled"
 
+    booking.reminder_sent = False
+
     db.session.commit()
 
     # Fetch user (customer)
@@ -659,7 +708,7 @@ def reschedule_booking(booking_id):
         send_reschedule_email_to_employee(selected_employee.user, booking, service, customer)
 
     return jsonify({
-        "message": "Booking rescheduled successfully",
+        "success": "Booking rescheduled successfully",
         "booking_id": booking.id,
         "new_date": new_date.strftime("%Y-%m-%d"),
         "new_start_time": new_start_time.strftime("%H:%M"),
@@ -717,3 +766,101 @@ def send_reschedule_email_to_employee(employee_user, booking, service, customer)
         """
     )
     mail.send(msg)
+
+
+
+
+
+# Fetch Book
+@booking_bp.route("/bookings/<int:booking_id>", methods=["GET"])
+@jwt_required()
+def get_booking_details(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+
+    return jsonify({
+        "booking": {
+            "id": booking.id,
+            "date": booking.booking_date.isoformat(),
+            "start_time": booking.start_time.strftime("%H:%M"),
+            "end_time": booking.end_time.strftime("%H:%M"),
+            "status": booking.status,
+            "price": float(booking.price),
+        },
+        "client": {
+            "id": booking.user.id,
+            "name": booking.user.username,
+            "allergies": [
+                {"id": a.id, "name": a.name}
+                for a in booking.user.allergies
+            ]
+        }
+    }), 200
+
+
+
+
+# Fetch all Bookings
+@booking_bp.route("/beautician/bookings", methods=["GET"])
+@jwt_required()
+def get_beautician_bookings():
+    current_user_id = get_jwt_identity()
+
+    # Fetch logged-in user
+    user = User.query.get_or_404(current_user_id)
+
+    # Ensure user is a beautician
+    if not user.is_beautician or not user.employee:
+        return jsonify({"error": "Access denied"}), 403
+
+    employee_id = user.employee.id
+
+    bookings = (
+        Booking.query
+        .filter(Booking.employee_id == employee_id)
+        .options(
+            joinedload(Booking.user).joinedload(User.allergies),
+            joinedload(Booking.service)
+        )
+        .order_by(Booking.booking_date.desc(), Booking.start_time.asc())
+        .all()
+    )
+
+    response = []
+
+    for booking in bookings:
+        response.append({
+
+            # ---------- Booking ----------
+            "booking": {
+                "id": booking.id,
+                "date": booking.booking_date.isoformat(),
+                "start_time": booking.start_time.strftime("%H:%M"),
+                "end_time": booking.end_time.strftime("%H:%M"),
+                "status": booking.status,
+                "price": float(booking.price),
+            },
+
+            # ---------- Service ----------
+            "service": {
+                "id": booking.service.id,
+                "title": booking.service.title,
+                "duration_minutes": booking.service.duration_minutes,
+                "price": float(booking.service.price)
+            },
+
+            # ---------- Client ----------
+            "client": {
+                "id": booking.user.id,
+                "username": booking.user.username,
+                "profile_picture": booking.user.profile_picture,
+                "allergies": [
+                    {
+                        "id": allergy.id,
+                        "name": allergy.name
+                    }
+                    for allergy in booking.user.allergies
+                ]
+            }
+        })
+
+    return jsonify(response), 200

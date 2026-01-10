@@ -21,6 +21,7 @@ class User(db.Model):
 
     bookings = db.relationship("Booking", backref="user", cascade="all, delete-orphan", passive_deletes=True)
     employee = db.relationship("Employee",back_populates="user",uselist=False,cascade="all, delete-orphan")
+    allergies = db.relationship("Allergy", back_populates="user", cascade="all, delete-orphan")
 
 
 
@@ -156,12 +157,29 @@ class Booking(db.Model):
 
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reminder_sent = db.Column(db.Boolean, default=False)
+
+    def update_start_datetime(self, new_start_datetime):
+        if self.start_datetime != new_start_datetime:
+            self.start_datetime = new_start_datetime
+            self.last_reminder_sent_for = None
 
     __table_args__ = (
         CheckConstraint('start_time < end_time', name='check_start_before_end'),
         Index('idx_employee_date_status', 'employee_id', 'booking_date', 'status'),
         Index('idx_user_bookings', 'user_id', 'booking_date', 'status'),
     )
+
+
+
+class Allergy(db.Model):
+    __tablename__ = "allergies"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+
+    user = db.relationship("User", back_populates="allergies")
 
 class TokenBlocklist(db.Model):
     __tablename__ = 'token_blocklist'

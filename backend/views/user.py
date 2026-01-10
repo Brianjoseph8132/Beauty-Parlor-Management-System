@@ -103,18 +103,19 @@ def update_profile():
     data = request.get_json()
 
     # Check if new username/email already exists
-    if "username" in data:
+    if "username" in data and data["username"]:
         existing_user = User.query.filter_by(username=data["username"]).first()
         if existing_user and existing_user.id != user_id:
             return jsonify({'error': 'Username already taken'}), 400
         user.username = data["username"]
 
-    if "email" in data:
+    if "email" in data and data["email"]:
         existing_email = User.query.filter_by(email=data["email"]).first()
         if existing_email and existing_email.id != user_id:
             return jsonify({'error': 'Email already in use'}), 400
         user.email = data["email"]
 
+    # Only update password if provided and not empty
     if "password" in data and data["password"]:
         user.password = generate_password_hash(data["password"])
 
@@ -124,7 +125,21 @@ def update_profile():
     if "is_beautician" in data:
         user.is_beautician = data["is_beautician"]
 
-    db.session.commit()
-    return jsonify({'success': 'Profile updated successfully'}), 200
-
+    try:
+        db.session.commit()
+        
+        # RETURN UPDATED USER DATA
+        return jsonify({
+            "success": "Profile updated successfully",
+            "updatedUser": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "profile_picture": user.profile_picture,
+                "is_beautician": user.is_beautician
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update profile', 'details': str(e)}), 500
 

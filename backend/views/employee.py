@@ -8,7 +8,7 @@ from datetime import time, datetime
 
 employee_bp = Blueprint("employee_bp", __name__)
 
-
+# Added Employee
 @employee_bp.route("/employee", methods=["POST"])
 def add_employee():
     data = request.json
@@ -119,7 +119,7 @@ def add_employee():
 
 
 
-
+# Fetch Employee
 @employee_bp.route("/employee/<int:employee_id>", methods=["GET"])
 def get_employee_profile(employee_id):
     employee = Employee.query.get(employee_id)
@@ -145,7 +145,7 @@ def get_employee_profile(employee_id):
 
 
 
-
+# Update Employee
 @employee_bp.route("/employees/<int:employee_id>", methods=["PUT"])
 def update_employee(employee_id):
     data = request.json
@@ -232,7 +232,7 @@ def update_employee(employee_id):
 
 
 
-
+# Delete 
 @employee_bp.route("/employees/<int:employee_id>", methods=["DELETE"])
 def delete_employee(employee_id):
     employee = Employee.query.get(employee_id)
@@ -259,7 +259,7 @@ def delete_employee(employee_id):
 
 
 
-
+# All Employees
 @employee_bp.route("/employees", methods=["GET"])
 def list_employees():
     employees = Employee.query.all()

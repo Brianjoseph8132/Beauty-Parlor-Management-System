@@ -23,6 +23,7 @@ sqlalchemy-serializer = "*"
 google-auth = "*"
 cloudinary = "*"
 apscheduler = "*"
+reportlab = "==3.6.12"
 
 [dev-packages]
 

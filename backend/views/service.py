@@ -94,7 +94,7 @@ def get_service(service_id):
     return jsonify(service.to_dict()), 200
 
 
-
+# Update 
 @service_bp.route("/services/<int:service_id>", methods=["PUT"])
 @jwt_required()
 # @admin_required

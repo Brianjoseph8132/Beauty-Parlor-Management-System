@@ -18,13 +18,13 @@ app = Flask(__name__)
 
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 # migration initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///salon.sqlite'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 migrate = Migrate(app, db)
 db.init_app(app)
 
 
 # jwt
-app.config["JWT_SECRET_KEY"] = "bjdhbjfhdjgewu"
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] =  timedelta(hours=1)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=14)
 
@@ -34,13 +34,13 @@ jwt.init_app(app)
 
 
 # Flask mail configuration
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_SERVER'] = os.getenv("MAIL_SERVER")
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'ashley.testingmoringa@gmail.com'  
-app.config['MAIL_PASSWORD'] ='wksb hzbp lyqu wyxo'  
-app.config['MAIL_DEFAULT_SENDER'] = "ashley.testingmoringa@gmail.com"
+app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME") 
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv("MAIL_DEFAULT_SENDER")
 
 mail = Mail(app)
 
@@ -58,6 +58,11 @@ app.register_blueprint(category_bp)
 app.register_blueprint(service_bp)
 app.register_blueprint(booking_bp)
 app.register_blueprint(employee_bp)
+app.register_blueprint(receipt_bp)
+app.register_blueprint(reminder_bp)
+app.register_blueprint(allergy_bp)
+
+from views.reminder import start_scheduler
 
 
 
@@ -80,5 +85,7 @@ def check_if_token_revoked(jwt_header, jwt_payload: dict) -> bool:
 
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    with app.app_context():
+        start_scheduler()
     app.run(debug=True)

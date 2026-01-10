@@ -6,3 +6,6 @@ from .category import *
 from .service import *
 from .book import *
 from .employee import *
+from .receipt import *
+from .reminder import *
+from .allergy  import *
