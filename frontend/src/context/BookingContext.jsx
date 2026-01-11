@@ -162,110 +162,150 @@ export const BookingProvider = ({children}) => {
 
 
 
-        // ========Cancellation====
-        const cancelBooking = async (bookingId) => {
-            if (!authToken) return false;
+    // ========Cancellation====
+    const cancelBooking = async (bookingId) => {
+        if (!authToken) {
+            toast.error("Please log in to cancel bookings");
+            return false;
+        }
 
-            const toastId = toast.loading("Cancelling booking...");
+        const toastId = toast.loading("Cancelling booking...");
 
-            try {
-                const res = await fetch(
-                    `http://127.0.0.1:5000/bookings/cancel/${bookingId}`,
-                    {
-                        method: "PATCH",
-                        headers: {
-                            Authorization: `Bearer ${authToken}`,
-                            "Content-Type": "application/json",
-                        },
-                    }
-                );
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(
-                        data?.error || "Failed to cancel booking"
-                    );
+        try {
+            const res = await fetch(
+                `http://127.0.0.1:5000/bookings/cancel/${bookingId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                        "Content-Type": "application/json",
+                    },
                 }
+            );
 
-                // Update bookings in state (remove or update status)
-                setAppointments((prev) =>
-                    prev.map((booking) =>
-                        booking.id === bookingId
-                            ? { ...booking, status: "cancelled" }
-                            : booking
-                    )
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(
+                    data?.error || "Failed to cancel booking"
                 );
-
-                toast.update(toastId, {
-                    render: data.success || "Booking cancelled successfully",
-                    type: "success",
-                    isLoading: false,
-                    autoClose: 3000,
-                });
-                
-                setOnChange(!onChange);
-
-                return true;
-
-            } catch (err) {
-                console.error("Cancel booking error:", err);
-
-                toast.update(toastId, {
-                    render: err.message,
-                    type: "error",
-                    isLoading: false,
-                    autoClose: 4000,
-                });
-
-                return false;
             }
-        };
 
+            // Update bookings in state (update status to cancelled)
+            setAppointments((prev) =>
+                prev.map((booking) =>
+                    booking.id === bookingId
+                        ? { ...booking, status: "cancelled" }
+                        : booking
+                )
+            );
 
+            toast.update(toastId, {
+                render: data.success || "Booking cancelled successfully",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+            });
+            
+            
+            // await fetchUserBookings(); // Uncomment if you want fresh data
+            
+            setOnChange(!onChange); 
 
-        // ===========Reschedule=============
-        const rescheduleBooking = async (bookingId, payload) => {
-            const toastId = toast.loading("Rescheduling booking...");
+            return true;
 
-            try {
-                const res = await fetch(
+        } catch (err) {
+            console.error("Cancel booking error:", err);
+
+            toast.update(toastId, {
+                render: err.message || "Failed to cancel booking",
+                type: "error",
+                isLoading: false,
+                autoClose: 4000,
+            });
+
+            return false;
+        }
+    };
+
+    // ===========Reschedule=============
+    const rescheduleBooking = async ({ bookingId, date, startTime, employeeId }) => {
+        if (!authToken) {
+            toast.error("Please log in to reschedule bookings");
+            return false;
+        }
+
+        const toastId = toast.loading("Rescheduling booking...");
+
+        try {
+            const payload = {
+                date,
+                start_time: startTime, 
+                employee_id: employeeId, 
+            };
+
+            const res = await fetch(
                 `http://127.0.0.1:5000/bookings/reschedule/${bookingId}`,
                 {
                     method: "PATCH",
                     headers: {
-                    Authorization: `Bearer ${authToken}`,
-                    "Content-Type": "application/json",
+                        Authorization: `Bearer ${authToken}`,
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify(payload),
                 }
-                );
+            );
 
-                const data = await res.json();
+            const data = await res.json();
 
-                if (!res.ok) {
-                  throw new Error(data.error);
-                }
-
-                toast.update(toastId, {
-                    render: data.success,
-                    type: "success",
-                    isLoading: false,
-                });
-
-                setOnChange(!onChange);
-                return true;
-            } catch (err) {
-                toast.update(toastId, {
-                    render: err.message,
-                    type: "error",
-                    isLoading: false,
-                });
-                return false;
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to reschedule booking");
             }
-        };
 
-  
+            // Update the booking in state with new details
+            setAppointments((prev) =>
+                prev.map((booking) =>
+                    booking.id === bookingId
+                        ? {
+                            ...booking,
+                            date: data.new_date,
+                            start_time: data.new_start_time,
+                            end_time: data.new_end_time,
+                            employee_name: data.employee,
+                            employee_id: data.employee_id,
+                            status: "rescheduled",
+                        }
+                        : booking
+                )
+            );
+
+            toast.update(toastId, {
+                render: data.success || "Booking rescheduled successfully",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+            });
+
+            // Optional: Refresh bookings from server
+            // await fetchUserBookings(); // Uncomment if you want fresh data
+
+            setOnChange(!onChange);
+            return true;
+
+        } catch (err) {
+            console.error("Reschedule booking error:", err);
+
+            toast.update(toastId, {
+                render: err.message || "Failed to reschedule booking",
+                type: "error",
+                isLoading: false,
+                autoClose: 4000,
+            });
+
+            return false;
+        }
+    };
+    
 
 
 

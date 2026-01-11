@@ -160,7 +160,7 @@ const Navbar = () => {
                   >
                     Reminder
                   </Link> */}
-                  <Link
+                  {/* <Link
                     to="/single"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                     ${
@@ -170,7 +170,7 @@ const Navbar = () => {
                     }`}
                   >
                     Profile
-                  </Link>
+                  </Link> */}
                   <Link
                     to="/login"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 

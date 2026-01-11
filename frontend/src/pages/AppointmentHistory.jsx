@@ -1,19 +1,22 @@
 import { motion } from "framer-motion";
 import { useContext, useState } from "react";
-import { Calendar, Clock, MapPin, DollarSign, Search, Filter, Download, Eye, X, CheckCircle, XCircle, Clock3 } from "lucide-react";
+import { Calendar, Clock, MapPin, DollarSign, Search, Filter, Download, Eye, X, CheckCircle, XCircle, Clock3, RefreshCw, Ban } from "lucide-react";
 import { BookingContext } from "../context/BookingContext";
 import { ServiceContext } from "../context/ServiceContext";
+import { useNavigate } from "react-router-dom";
 
 const AppointmentHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+  const navigate = useNavigate(); 
 
-  const {appointments,setAppointments } = useContext(BookingContext)
-  const {downloadReceipt} = useContext(ServiceContext)
+  const { appointments, setAppointments, cancelBooking, rescheduleBooking } = useContext(BookingContext);
+  const { downloadReceipt } = useContext(ServiceContext);
   const appointmentsPerPage = 6;
-  console.log("BOOKINGS", appointments)
 
   const mappedAppointments = appointments.map((b) => ({
     id: b.id,
@@ -25,12 +28,17 @@ const AppointmentHistory = () => {
       day: "numeric",
       year: "numeric",
     }),
+    rawDate: b.date, // Keep raw date for rescheduling
     time: `${b.start_time} - ${b.end_time}`,
-    duration: "",
+    startTime: b.start_time,
+    endTime: b.end_time,
+    duration: `${b.duration} min`,
     location: "Poplar beauty place",
     address: "Ronald Ngala Street, RNG Plaza, 1st Floor, Shop No.203",
     price: `KES ${b.price.toFixed(2)}`,
     status: b.status,
+    serviceId: b.service_id,
+    employeeId: b.employee_id,
   }));
 
   const statusOptions = ["All", "Upcoming", "completed", "cancelled", "rescheduled"];
@@ -47,6 +55,43 @@ const AppointmentHistory = () => {
     await downloadReceipt(bookingId);
   };
 
+  // Handle Cancel Appointment
+  const handleCancelClick = (appointment) => {
+    setAppointmentToCancel(appointment);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!appointmentToCancel) return;
+    
+    try {
+      await cancelBooking(appointmentToCancel.id);
+      setShowCancelModal(false);
+      setAppointmentToCancel(null);
+      // Optionally close detail modal if open
+      if (selectedAppointment?.id === appointmentToCancel.id) {
+        setSelectedAppointment(null);
+      }
+    } catch (error) {
+      alert("Failed to cancel appointment: " + error.message);
+    }
+  };
+
+  // Handle Reschedule Appointment
+  const handleReschedule = (appointment) => {
+    // Navigate to booking page with appointment data for rescheduling
+    // window.location.href = `/book?reschedule=${appointment.id}`;
+    // Or use navigate if you have it from useNavigate()
+    navigate(`/book`, { 
+      state: { 
+        rescheduleId: appointment.id,
+        serviceId: appointment.serviceId,
+        title: appointment.service,
+        duration: appointment.duration,
+        price: appointment.price
+      }
+    });
+  };
 
   // Filter appointments
   const filteredAppointments = mappedAppointments.filter((appointment) => {
@@ -110,6 +155,11 @@ const AppointmentHistory = () => {
       default:
         return "";
     }
+  };
+
+  // Check if appointment is upcoming/confirmed
+  const isUpcoming = (status) => {
+    return status.toLowerCase() === "confirmed" || getDisplayStatus(status) === "Upcoming";
   };
 
   const fadeInUp = {
@@ -243,12 +293,44 @@ const AppointmentHistory = () => {
                     whileTap={{ scale: 0.98 }}
                   >
                     <Eye className="w-4 h-4" />
-                    View Details
+                    View
                   </motion.button>
+
+                  {/* Show Reschedule & Cancel for Upcoming appointments */}
+                  {isUpcoming(appointment.status) && (
+                    <>
+                      <motion.button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReschedule(appointment);
+                        }}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-600 rounded-lg font-medium text-sm hover:bg-blue-500/30 transition border border-blue-500/30"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Reschedule
+                      </motion.button>
+                      <motion.button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelClick(appointment);
+                        }}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 text-red-600 rounded-lg font-medium text-sm hover:bg-red-500/30 transition border border-red-500/30"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Ban className="w-4 h-4" />
+                        Cancel
+                      </motion.button>
+                    </>
+                  )}
+
+                  {/* Show Download Receipt for Completed appointments */}
                   {appointment.status.toLowerCase() === "completed" && (
                     <motion.button
                       onClick={(e) => {
-                        e.stopPropagation(); // prevents card click issues
+                        e.stopPropagation();
                         handleDownloadReceipt(appointment.id);
                       }}
                       className="flex items-center justify-center gap-2 px-4 py-2 bg-[#D4AA7D] text-[#272727] rounded-lg font-medium text-sm hover:bg-[#272727] hover:text-[#EFD09E] transition"
@@ -412,6 +494,36 @@ const AppointmentHistory = () => {
             </div>
 
             <div className="flex gap-4 mt-8">
+              {/* Show Reschedule & Cancel for Upcoming */}
+              {isUpcoming(selectedAppointment.status) && (
+                <>
+                  <motion.button
+                    onClick={() => {
+                      handleReschedule(selectedAppointment);
+                      setSelectedAppointment(null);
+                    }}
+                    className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-600 transition flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Reschedule
+                  </motion.button>
+                  <motion.button
+                    onClick={() => {
+                      handleCancelClick(selectedAppointment);
+                    }}
+                    className="flex-1 bg-red-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-600 transition flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Ban className="w-4 h-4" />
+                    Cancel Appointment
+                  </motion.button>
+                </>
+              )}
+
+              {/* Show Download Receipt for Completed */}
               {selectedAppointment.status.toLowerCase() === "completed" && (
                 <motion.button
                   onClick={() => handleDownloadReceipt(selectedAppointment.id)}
@@ -422,6 +534,7 @@ const AppointmentHistory = () => {
                   Download Receipt
                 </motion.button>
               )}
+
               <motion.button
                 onClick={() => setSelectedAppointment(null)}
                 className="flex-1 bg-[#EFD09E]/10 text-[#EFD09E] px-6 py-3 rounded-xl font-semibold hover:bg-[#EFD09E]/20 transition border border-[#D4AA7D]/30"
@@ -429,6 +542,49 @@ const AppointmentHistory = () => {
                 whileTap={{ scale: 0.98 }}
               >
                 Close
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && appointmentToCancel && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-[#272727]/95 backdrop-blur-md rounded-3xl p-8 max-w-md w-full border border-[#D4AA7D]/30"
+          >
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Ban className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#EFD09E] mb-2">Cancel Appointment?</h3>
+              <p className="text-[#EFD09E]/70">
+                Are you sure you want to cancel this appointment for <strong>{appointmentToCancel.service}</strong> on {appointmentToCancel.date}?
+              </p>
+            </div>
+
+            <div className="flex gap-4">
+              <motion.button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setAppointmentToCancel(null);
+                }}
+                className="flex-1 bg-[#EFD09E]/10 text-[#EFD09E] px-6 py-3 rounded-xl font-semibold hover:bg-[#EFD09E]/20 transition border border-[#D4AA7D]/30"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Keep Appointment
+              </motion.button>
+              <motion.button
+                onClick={confirmCancel}
+                className="flex-1 bg-red-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-600 transition"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Yes, Cancel
               </motion.button>
             </div>
           </motion.div>

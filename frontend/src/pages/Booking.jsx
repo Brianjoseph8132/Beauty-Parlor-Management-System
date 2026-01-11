@@ -12,18 +12,26 @@ const Booking = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date(2025, 11, 30));
 
-  const { slots, setServiceId, setDate, createBooking,fetchBookingPreview,clearBookingPreview,bookingPreview,previewError,previewLoading } = useContext(BookingContext);
+  const { slots, setServiceId, setDate, createBooking,fetchBookingPreview,clearBookingPreview,bookingPreview,previewError,previewLoading,rescheduleBooking } = useContext(BookingContext);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!location.state?.serviceId) {
+    // Check if it's a reschedule or a new booking
+    if (!location.state?.serviceId && !location.state?.rescheduleId) {
       navigate("/service");
     }
   }, [location.state, navigate]);
 
 
-  const { serviceId, title, duration, price } = location.state;
+
+  const { 
+    serviceId, 
+    title, 
+    duration, 
+    price,
+    rescheduleId 
+  } = location.state || {};
 
   useEffect(() => {
     console.log("SETTING SERVICE ID:", serviceId);
@@ -156,14 +164,29 @@ const Booking = () => {
     try {
       const formattedDate = selectedDate.toISOString().split("T")[0];
 
-      await createBooking({
-        serviceId,
-        date: formattedDate,
-        startTime: selectedSlot.start_time,
-        employeeId: selectedSlot.employee_id || null,
-      });
+      // Check if this is a reschedule or new booking
+      if (rescheduleId) {
+        // Call reschedule API
+        await rescheduleBooking({
+          bookingId: rescheduleId,
+          date: formattedDate,
+          startTime: selectedSlot.start_time,
+          employeeId: selectedSlot.employee_id || null,
+        });
+        
+        alert("Appointment rescheduled successfully!");
+        navigate("/history"); // Go to appointments page
+      } else {
+        // Call create booking API
+        await createBooking({
+          serviceId,
+          date: formattedDate,
+          startTime: selectedSlot.start_time,
+          employeeId: selectedSlot.employee_id || null,
+        });
 
-      navigate("/booking-success");
+        navigate("/booking-success");
+      }
     } catch (error) {
       alert(error.message);
     }
@@ -444,7 +467,7 @@ const Booking = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Confirm Booking
+                {rescheduleId ? "Confirm Reschedule" : "Confirm Booking"}
               </motion.button>
             </div>
           </div>

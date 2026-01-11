@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, current_app
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from models import db, Booking, User, Service, Employee
+from flask_jwt_extended import jwt_required, get_jwt_identity
 import atexit
 from flask_mail import Message
 from app import mail
@@ -424,7 +425,7 @@ def get_my_upcoming_appointments():
                 upcoming.append({
                     'booking_id': booking.id,
                     'service': service.title,
-                    'employee': employee.username,
+                    'employee': employee.full_name,
                     'employee_full_name': employee.full_name if hasattr(employee, 'full_name') else employee.username,
                     'date': date_text,
                     'date_full': booking.booking_date.isoformat(),

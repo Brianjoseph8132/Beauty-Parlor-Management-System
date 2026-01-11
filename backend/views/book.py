@@ -137,7 +137,8 @@ def create_booking():
             "booking_id": booking.id,
             "employee_id": assigned_employee.id,
             "employee_name": assigned_employee.full_name,
-            "service_name": service.title, 
+            "service_name": service.title,
+            "service_id": service.id,
             "date": booking_date.strftime("%Y-%m-%d"),
             "start_time": start_time.strftime("%H:%M"),
             "end_time": end_time.strftime("%H:%M"),
@@ -285,6 +286,7 @@ def get_user_bookings():
     return jsonify([{
         "id": b.id,
         "service_name": b.service.title,
+        "service_id":b.service.id,
         "duration":b.service.duration_minutes, 
         "employee_name": b.employee.full_name,
         "date": b.booking_date.strftime("%Y-%m-%d"),
@@ -706,13 +708,23 @@ def reschedule_booking(booking_id):
     # Fetch user (customer)
     customer = User.query.get(user_id)
 
-    # Send email to CUSTOMER (user)
-    if customer and customer.email:
-        send_reschedule_email_to_customer(customer, booking, service, selected_employee, preferred_employee_id)
+    # Send email to CUSTOMER
+    try:
+        if customer and customer.email:
+            send_reschedule_email_to_customer(
+                customer, booking, service, selected_employee, preferred_employee_id
+            )
+    except Exception as e:
+        print("Email error (customer):", e)
 
-    # Send email to EMPLOYEE (via their linked user)
-    if selected_employee.user and selected_employee.user.email:
-        send_reschedule_email_to_employee(selected_employee.user, booking, service, customer)
+    # Send email to EMPLOYEE
+    try:
+        if selected_employee.user and selected_employee.user.email:
+            send_reschedule_email_to_employee(
+                selected_employee.user, booking, service, customer
+            )
+    except Exception as e:
+        print("Email error (employee):", e)
 
     return jsonify({
         "success": "Booking rescheduled successfully",

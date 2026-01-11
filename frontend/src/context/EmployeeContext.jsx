@@ -188,7 +188,7 @@ export const EmployeeProvider = ({children}) => {
     // Auto-fetch on login
     useEffect(() => {
         fetchUpcomingAppointments();
-    }, [authToken, onChange]);
+    }, [authToken]);
 
 
 

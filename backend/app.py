@@ -16,7 +16,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 
-CORS(app, supports_credentials=True, origins=["http://localhost:5174"])
+CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 # migration initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 migrate = Migrate(app, db)
@@ -34,13 +34,13 @@ jwt.init_app(app)
 
 
 # Flask mail configuration
-app.config['MAIL_SERVER'] = os.getenv("MAIL_SERVER")
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME") 
-app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv("MAIL_DEFAULT_SENDER")
+app.config['MAIL_USERNAME'] = 'ashley.testingmoringa@gmail.com'  
+app.config['MAIL_PASSWORD'] ='wksb hzbp lyqu wyxo'  
+app.config['MAIL_DEFAULT_SENDER'] = "ashley.testingmoringa@gmail.com"
 
 mail = Mail(app)
 
