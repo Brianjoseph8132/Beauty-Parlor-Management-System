@@ -375,3 +375,77 @@ def start_scheduler():
     atexit.register(lambda: scheduler.shutdown())
     
     return scheduler
+
+
+
+
+@reminder_bp.route('/reminders/my-upcoming', methods=['GET'])
+@jwt_required()
+def get_my_upcoming_appointments():
+    """Get current user's upcoming appointments within 24 hours"""
+    try:
+        user_id = get_jwt_identity()
+        now = datetime.utcnow()
+        next_24_hours = now + timedelta(hours=24)
+        
+        # Query user's upcoming bookings
+        bookings_data = db.session.query(Booking, Service, Employee).join(
+            Service, Booking.service_id == Service.id
+        ).join(
+            Employee, Booking.employee_id == Employee.id
+        ).filter(
+            Booking.user_id == user_id,
+            Booking.status.in_(['confirmed', 'pending']),
+            Booking.booking_date >= now.date(),
+            Booking.booking_date <= next_24_hours.date()
+        ).order_by(Booking.booking_date, Booking.start_time).all()
+        
+        upcoming = []
+        for booking, service, employee in bookings_data:
+            booking_datetime = datetime.combine(booking.booking_date, booking.start_time)
+            
+            # Only include if within 24 hours
+            if now <= booking_datetime <= next_24_hours:
+                hours_until = (booking_datetime - now).total_seconds() / 3600
+                
+                # Calculate duration
+                start_dt = datetime.combine(booking.booking_date, booking.start_time)
+                end_dt = datetime.combine(booking.booking_date, booking.end_time)
+                duration_minutes = int((end_dt - start_dt).total_seconds() / 60)
+                
+                # Format date
+                if booking.booking_date == now.date():
+                    date_text = "Today"
+                elif booking.booking_date == (now + timedelta(days=1)).date():
+                    date_text = "Tomorrow"
+                else:
+                    date_text = booking.booking_date.strftime("%B %d, %Y")
+                
+                upcoming.append({
+                    'booking_id': booking.id,
+                    'service': service.title,
+                    'employee': employee.username,
+                    'employee_full_name': employee.full_name if hasattr(employee, 'full_name') else employee.username,
+                    'date': date_text,
+                    'date_full': booking.booking_date.isoformat(),
+                    'time': booking.start_time.strftime('%I:%M %p'),
+                    'start_time': booking.start_time.isoformat(),
+                    'end_time': booking.end_time.isoformat(),
+                    'duration': f"{duration_minutes} minutes" if duration_minutes < 60 else f"{duration_minutes // 60} hour{'s' if duration_minutes >= 120 else ''}",
+                    'duration_minutes': duration_minutes,
+                    'hours_until': round(hours_until, 1),
+                    'status': booking.status,
+                    'price': float(booking.price)
+                })
+        
+        return jsonify({
+            'success': True,
+            'count': len(upcoming),
+            'appointments': upcoming
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

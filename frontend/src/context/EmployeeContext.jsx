@@ -11,6 +11,7 @@ export const EmployeeContext = createContext();
 export const EmployeeProvider = ({children}) => {
     const {authToken} = useContext(UserContext);
     const [allergies, setAllergies] = useState([]);
+    const [upcomingAppointments, setUpcomingAppointments] = useState([]);
 
     const [onChange, setOnChange] = useState(true);
 
@@ -135,13 +136,68 @@ export const EmployeeProvider = ({children}) => {
     };
 
 
+    // =================UpComing Appointments=========
+    const fetchUpcomingAppointments = async () => {
+        if (!authToken) return;
+
+        const toastId = toast.loading("Fetching upcoming appointments...");
+
+        try {
+            const res = await fetch(
+                "http://127.0.0.1:5000/reminders/my-upcoming",
+                {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(
+                    data?.error || "Failed to fetch upcoming appointments"
+                );
+            }
+
+            setUpcomingAppointments(data.appointments || []);
+
+            toast.update(toastId, {
+                render: "Appointments updated",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+            });
+
+        } catch (err) {
+            console.error("Reminder fetch error:", err);
+
+            setUpcomingAppointments([]);
+
+            toast.update(toastId, {
+                render: err.message || "Something went wrong",
+                type: "error",
+                isLoading: false,
+                autoClose: 4000,
+            });
+        }
+    };
+
+
+    // Auto-fetch on login
+    useEffect(() => {
+        fetchUpcomingAppointments();
+    }, [authToken]);
+
+
 
     const data = {
         allergies,
         deleteallergy,
         addAllergy,
         updateAllergy,
-        setAllergies
+        setAllergies,
+        upcomingAppointments
       
     }
 

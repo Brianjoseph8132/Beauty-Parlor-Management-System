@@ -1,24 +1,21 @@
 import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, X, Bell } from "lucide-react";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { EmployeeContext } from "../context/EmployeeContext";
 
 const AppointmentReminder = () => {
   const [isVisible, setIsVisible] = useState(true);
+  const {upcomingAppointments} = useContext(EmployeeContext);
 
   // Sample upcoming appointment (would come from your API/state)
-  const upcomingAppointment = {
-    service: "Hair Styling & Treatment",
-    employee: "Sarah L.",
-    date: "Tomorrow",
-    time: "2:00 PM",
-    duration: "2 hours",
-    location: "BeautyHub Downtown",
-    address: "123 Beauty Street, Nairobi",
-    hoursUntil: 20, // Hours until appointment
+  const upcomingAppointmentInfo = { 
+    location: "BeautyHub Downtown", 
+    address: "Ronald Ngala Street, RNG Plaza, 1st Floor, Shop No.203"
   };
+  const upcomingAppointment = upcomingAppointments?.[0];
 
   // Only show if appointment is within 24 hours
-  const shouldShowReminder = upcomingAppointment && upcomingAppointment.hoursUntil <= 24;
+  const shouldShowReminder = upcomingAppointment && upcomingAppointment.hours_until <= 24;
 
   if (!shouldShowReminder || !isVisible) return null;
 
@@ -78,7 +75,7 @@ const AppointmentReminder = () => {
               Upcoming Appointment
             </h2>
             <p className="text-[#272727]/80 text-sm">
-              Your appointment is in {upcomingAppointment.hoursUntil} hours
+              Your appointment is in {upcomingAppointment.hours_until} hours
             </p>
           </div>
 
@@ -88,7 +85,7 @@ const AppointmentReminder = () => {
               {upcomingAppointment.service}
             </h3>
             <p className="text-[#272727]/80 mb-4">
-              with {upcomingAppointment.employee}
+              with {upcomingAppointment.employee_full_name}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -110,7 +107,7 @@ const AppointmentReminder = () => {
                 <div className="flex-shrink-0 w-8 h-8 bg-[#272727]/20 rounded-lg flex items-center justify-center">
                   <MapPin className="w-4 h-4" />
                 </div>
-                <span className="font-medium text-sm sm:text-base">{upcomingAppointment.location}</span>
+                <span className="font-medium text-sm sm:text-base">{upcomingAppointmentInfo.location}</span>
               </div>
             </div>
           </div>
