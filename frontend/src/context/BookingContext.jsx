@@ -29,18 +29,30 @@ export const BookingProvider = ({children}) => {
         if (!serviceId || !date) return;
 
         fetch(
-        `http://127.0.0.1:5000/available-slots?service_id=${serviceId}&date=${date}`,
-        {
-            headers: {
-            Authorization: `Bearer ${authToken}`,
-            },
-        }
+            `http://127.0.0.1:5000/available-slots?service_id=${serviceId}&date=${date}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            }
         )
-        .then((res) => res.json())
-        .then((data) => {
-            setSlots(data.slots);
-        })
-        .catch((err) => console.error("Slot fetch error:", err));
+            .then(async (res) => {
+                const data = await res.json();
+
+                if (!res.ok) {
+   
+                    throw new Error(data.error || "Failed to fetch available slots");
+                }
+
+                return data;
+            })
+            .then((data) => {
+                setSlots(data.slots);
+            })
+            .catch((err) => {
+                console.error("Slot fetch error:", err);
+                toast.error(err.message);
+            });
     }, [serviceId, date, authToken]);
 
 
@@ -143,7 +155,7 @@ export const BookingProvider = ({children}) => {
         })
             .then((res) => res.json())
             .then((data) => {
-            setAppointments(data);
+                setAppointments(data);
             })
             .catch((err) => console.error("Error fetching appointments:", err));
         }, [authToken, onchange]);
@@ -152,51 +164,51 @@ export const BookingProvider = ({children}) => {
 
 
         // =============Receipt ==========
-        const downloadReceipt = async (bookingId) => {
-            const toastId = toast.loading("Downloading receipt...");
+        // const downloadReceipt = async (bookingId) => {
+        //     const toastId = toast.loading("Downloading receipt...");
 
-            try {
-                const response = await fetch(
-                    `http://localhost:5000/receipts/${bookingId}`,
-                    {
-                        method: "GET",
-                        headers: {
-                            Authorization: `Bearer ${authToken}`,
-                        },
-                    }
-                );
+        //     try {
+        //         const response = await fetch(
+        //             `http://localhost:5000/receipts/${bookingId}`,
+        //             {
+        //                 method: "GET",
+        //                 headers: {
+        //                     Authorization: `Bearer ${authToken}`,
+        //                 },
+        //             }
+        //         );
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || "Failed to download receipt");
-                }
+        //         if (!response.ok) {
+        //             const errorData = await response.json();
+        //             throw new Error(errorData.message || "Failed to download receipt");
+        //         }
 
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
+        //         const blob = await response.blob();
+        //         const url = window.URL.createObjectURL(blob);
 
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `receipt-BK${String(bookingId).padStart(6, "0")}.pdf`;
+        //         const link = document.createElement("a");
+        //         link.href = url;
+        //         link.download = `receipt-BK${String(bookingId).padStart(6, "0")}.pdf`;
 
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+        //         document.body.appendChild(link);
+        //         link.click();
+        //         document.body.removeChild(link);
 
-                window.URL.revokeObjectURL(url);
+        //         window.URL.revokeObjectURL(url);
 
-                toast.dismiss(toastId);
-                toast.success("Receipt downloaded successfully");
+        //         toast.dismiss(toastId);
+        //         toast.success("Receipt downloaded successfully");
                 
-                setOnChange(prev => !prev);
+        //         setOnChange(prev => !prev);
 
-                return { success: true };
+        //         return { success: true };
 
-            } catch (err) {
-                toast.dismiss(toastId);
-                toast.error(err.message || "Download failed");
-                return { success: false, error: err.message };
-            }
-        };
+        //     } catch (err) {
+        //         toast.dismiss(toastId);
+        //         toast.error(err.message || "Download failed");
+        //         return { success: false, error: err.message };
+        //     }
+        // };
 
 
     const data = {
@@ -211,7 +223,7 @@ export const BookingProvider = ({children}) => {
         previewLoading,
         appointments,
         setAppointments,
-        downloadReceipt
+        // downloadReceipt
     }
 
     return (

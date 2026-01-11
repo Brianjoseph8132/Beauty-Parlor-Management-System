@@ -160,17 +160,17 @@ const Navbar = () => {
                   >
                     Reminder
                   </Link> */}
-                  {/* <Link
-                    to="/profile"
+                  <Link
+                    to="/single"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
                     ${
-                      isActive("/profile")
+                      isActive("/single")
                         ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
                         : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
                     }`}
                   >
                     Profile
-                  </Link> */}
+                  </Link>
                   <Link
                     to="/login"
                     className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 

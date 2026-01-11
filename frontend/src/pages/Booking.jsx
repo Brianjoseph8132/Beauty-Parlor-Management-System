@@ -18,7 +18,7 @@ const Booking = () => {
 
   useEffect(() => {
     if (!location.state?.serviceId) {
-      navigate("/services");
+      navigate("/service");
     }
   }, [location.state, navigate]);
 

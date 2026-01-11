@@ -80,7 +80,7 @@ export const UserProvider = ({ children }) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                token: googleToken, // ✅ SEND TOKEN
+                token: googleToken, // SEND TOKEN
             }),
             credentials: "include"
         })

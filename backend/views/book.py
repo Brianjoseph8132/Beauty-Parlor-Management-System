@@ -18,7 +18,7 @@ from sqlalchemy.orm import joinedload
 booking_bp = Blueprint("booking_bp", __name__)
 
 
-@booking_bp.route("/bookings", methods=["POST"])
+@booking_bp.route("/book", methods=["POST"])
 @jwt_required()
 def create_booking():
     user_id = get_jwt_identity()
@@ -270,18 +270,22 @@ def booking_preview():
 def get_user_bookings():
     """Get all bookings for the current user"""
     user_id = get_jwt_identity()
+
     status_filter = request.args.get("status")  
+
     
     query = Booking.query.filter_by(user_id=user_id)
-    
+  
     if status_filter:
         query = query.filter_by(status=status_filter)
     
     bookings = query.order_by(Booking.booking_date.desc(), Booking.start_time.desc()).all()
     
+    
     return jsonify([{
         "id": b.id,
-        "service_name": b.service.title,  # Changed from .name to .title
+        "service_name": b.service.title,
+        "duration":b.service.duration_minutes, 
         "employee_name": b.employee.full_name,
         "date": b.booking_date.strftime("%Y-%m-%d"),
         "start_time": b.start_time.strftime("%H:%M"),
@@ -403,7 +407,10 @@ def available_slots():
         return jsonify({"error": "service_id and date are required"}), 400
 
     # Get service
-    service = Service.query.get_or_404(service_id)
+    service = Service.query.get(service_id)
+
+    if not service:
+        return jsonify({"error": "Service not found"}), 404
     
     # Validate and parse date
     try:

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useContext, useState } from "react";
 import { Calendar, Clock, MapPin, DollarSign, Search, Filter, Download, Eye, X, CheckCircle, XCircle, Clock3 } from "lucide-react";
 import { BookingContext } from "../context/BookingContext";
+import { ServiceContext } from "../context/ServiceContext";
 
 const AppointmentHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -9,8 +10,10 @@ const AppointmentHistory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  const {appointments,setAppointments, downloadReceipt } = useContext(BookingContext)
+  const {appointments,setAppointments } = useContext(BookingContext)
+  const {downloadReceipt} = useContext(ServiceContext)
   const appointmentsPerPage = 6;
+  console.log("BOOKINGS", appointments)
 
   const mappedAppointments = appointments.map((b) => ({
     id: b.id,
@@ -23,10 +26,10 @@ const AppointmentHistory = () => {
       year: "numeric",
     }),
     time: `${b.start_time} - ${b.end_time}`,
-    duration: "", // optional (backend can add later)
+    duration: "",
     location: "Poplar beauty place",
-    address: "1 Poplar Street, Noordwyk, Midrand",
-    price: `R${b.price.toFixed(2)}`,
+    address: "Ronald Ngala Street, RNG Plaza, 1st Floor, Shop No.203",
+    price: `KES ${b.price.toFixed(2)}`,
     status: b.status,
   }));
 
@@ -242,7 +245,7 @@ const AppointmentHistory = () => {
                     <Eye className="w-4 h-4" />
                     View Details
                   </motion.button>
-                  {appointment.status === "completed" && (
+                  {appointment.status.toLowerCase() === "completed" && (
                     <motion.button
                       onClick={(e) => {
                         e.stopPropagation(); // prevents card click issues
@@ -409,7 +412,7 @@ const AppointmentHistory = () => {
             </div>
 
             <div className="flex gap-4 mt-8">
-              {selectedAppointment.status === "completed" && (
+              {selectedAppointment.status.toLowerCase() === "completed" && (
                 <motion.button
                   onClick={() => handleDownloadReceipt(selectedAppointment.id)}
                   className="flex-1 bg-[#D4AA7D] text-[#272727] px-6 py-3 rounded-xl font-semibold hover:bg-[#EFD09E] transition"

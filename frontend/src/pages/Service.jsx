@@ -3,6 +3,7 @@ import { useContext, useState } from "react";
 import { Search } from "lucide-react";
 import { ServiceContext } from "../context/ServiceContext";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 
 const Service = () => {
@@ -49,6 +50,7 @@ const Service = () => {
       state: {
         serviceId: service.id,
         title: service.title,
+        image:service.image,
         duration: service.duration_minutes,
         price: service.price,
       },
@@ -139,61 +141,69 @@ const Service = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {currentServices.length > 0 ? (
               currentServices.map((service, index) => (
-                <motion.div
+                <Link 
+                  to={`/single/${service.id}`} 
                   key={service.id}
-                  variants={fadeInUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -10, scale: 1.02 }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg border border-[#D4AA7D]/20 cursor-pointer"
+                  className="block"
                 >
-                  {/* Service Image */}
-                  <div className="relative h-48 bg-gradient-to-br from-[#D4AA7D] to-[#272727]">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-6xl">
-                        {service.category === "Cosmetics" && "💄"}
-                        {service.category === "Hairdressing" && "💇"}
-                        {service.category === "Barber" && "✂️"}
-                        {service.category === "Massages" && "💆"}
-                        {service.category === "Body Treatments" && "🧖"}
-                        {service.category === "Aromatherapy" && "🌸"}
-                      </span>
+                  <motion.div
+                    variants={fadeInUp}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ y: -10, scale: 1.02 }}
+                    className="bg-white rounded-2xl overflow-hidden shadow-lg border border-[#D4AA7D]/20 cursor-pointer"
+                  >
+                    {/* Service Image */}
+                    <div className="relative h-48 bg-gradient-to-br from-[#D4AA7D] to-[#272727]">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        {service.image && (  
+                          <img 
+                            src={service.image} 
+                            alt={service.title}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="absolute top-3 right-3 bg-[#D4AA7D] text-[#272727] px-3 py-1 rounded-full text-sm font-semibold">
+                        KSh {Number(service.price).toLocaleString('en-KE')} 
+                      </div>
                     </div>
-                    <div className="absolute top-3 right-3 bg-[#D4AA7D] text-[#272727] px-3 py-1 rounded-full text-sm font-semibold">
-                      ${service.price} 
-                    </div>
-                  </div>
 
-                  {/* Service Details */}
-                  <div className="p-5">
-                    <div className="mb-2">
-                      <span className="text-xs font-semibold text-[#D4AA7D] uppercase tracking-wide">
-                        {service.category?.name}
-                      </span>
+                    {/* Service Details */}
+                    <div className="p-5">
+                      <div className="mb-2">
+                        <span className="text-xs font-semibold text-[#D4AA7D] uppercase tracking-wide">
+                          {service.category?.name || service.category}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-[#272727] mb-2">
+                        {service.title}
+                      </h3>
+                      <p className="text-[#272727]/70 text-sm mb-4">
+                        {service.description}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-[#272727]/60 flex items-center gap-1">
+                          🕐 {service.duration_minutes} min
+                        </span>
+                        <motion.button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleBookNow(service);
+                          }}
+                          className="bg-[#D4AA7D] text-[#272727] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#272727] hover:text-[#EFD09E] transition"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Book Now
+                        </motion.button>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold text-[#272727] mb-2">
-                      {service.title}
-                    </h3>
-                    <p className="text-[#272727]/70 text-sm mb-4">
-                      {service.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[#272727]/60 flex items-center gap-1">
-                        🕐 {service.duration_minutes} min
-                      </span>
-                      <motion.button
-                        onClick={() => handleBookNow(service)}
-                        className="bg-[#D4AA7D] text-[#272727] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#272727] hover:text-[#EFD09E] transition"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Book Now
-                      </motion.button>
-                    </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </Link>
               ))
             ) : (
               <div className="col-span-full text-center py-16">

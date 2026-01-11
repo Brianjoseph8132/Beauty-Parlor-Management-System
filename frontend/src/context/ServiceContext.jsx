@@ -142,6 +142,7 @@ export const ServiceProvider = ({ children }) => {
         })
         .then((res) => res.json())
         .then((response) => {
+            console.log("SERVICES:", response)
             setServices(response);
         })
         .catch((error) =>
@@ -296,6 +297,54 @@ export const ServiceProvider = ({ children }) => {
     };
 
 
+    // Inside your existing context
+    const downloadReceipt = async (bookingId) => {
+        const toastId = toast.loading("Downloading receipt...");
+        
+        try {
+            const response = await fetch(
+                `http://localhost:5000/receipts/${bookingId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                }
+            );
+
+            // Check if response is OK (status 200-299)
+            if (!response.ok) {
+                // Try to parse error message from response
+                const errorData = await response.json();
+                toast.dismiss(toastId);
+                toast.error(errorData.message || errorData.error || "Failed to download receipt");
+                return { success: false, error: errorData.message };
+            }
+
+            // Get the PDF blob
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `receipt-BK${String(bookingId).padStart(6, '0')}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast.dismiss(toastId);
+            toast.success("Receipt downloaded successfully!");
+            return { success: true };
+            
+        } catch (err) {
+            console.error("Error downloading receipt:", err);
+            toast.dismiss(toastId);
+            toast.error(err.message || "Failed to download receipt");
+
+            return { success: false, error: err.message };
+        }
+    };
+
 
   const data ={
     categories,
@@ -306,7 +355,8 @@ export const ServiceProvider = ({ children }) => {
     addService,
     getServiceById,
     updateService,
-    deleteService
+    deleteService,
+    downloadReceipt
   }
   return (
     <ServiceContext.Provider value={data}>

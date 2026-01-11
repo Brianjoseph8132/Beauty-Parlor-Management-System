@@ -16,7 +16,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+CORS(app, supports_credentials=True, origins=["http://localhost:5174"])
 # migration initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 migrate = Migrate(app, db)
