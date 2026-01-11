@@ -3,9 +3,11 @@ import { Calendar, Clock, MapPin, X, Bell } from "lucide-react";
 import { useContext, useState } from "react";
 import { EmployeeContext } from "../context/EmployeeContext";
 
+
 const AppointmentReminder = () => {
   const [isVisible, setIsVisible] = useState(true);
   const {upcomingAppointments} = useContext(EmployeeContext);
+ 
 
   // Sample upcoming appointment (would come from your API/state)
   const upcomingAppointmentInfo = { 
@@ -19,15 +21,7 @@ const AppointmentReminder = () => {
 
   if (!shouldShowReminder || !isVisible) return null;
 
-  const handleReschedule = () => {
-    // Navigate to reschedule page or open modal
-    console.log("Reschedule appointment");
-  };
-
-  const handleCancel = () => {
-    // Open cancel confirmation modal or navigate to cancel page
-    console.log("Cancel appointment");
-  };
+  
 
   return (
     <div 
@@ -112,7 +106,7 @@ const AppointmentReminder = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons
           <div className="flex flex-col sm:flex-row gap-3">
             <motion.button
               onClick={handleReschedule}
@@ -130,7 +124,7 @@ const AppointmentReminder = () => {
             >
               Cancel
             </motion.button>
-          </div>
+          </div> */}
         </div>
       </div>
      </motion.div>

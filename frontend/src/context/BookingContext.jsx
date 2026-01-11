@@ -162,6 +162,116 @@ export const BookingProvider = ({children}) => {
 
 
 
+        // ========Cancellation====
+        const cancelBooking = async (bookingId) => {
+            if (!authToken) return false;
+
+            const toastId = toast.loading("Cancelling booking...");
+
+            try {
+                const res = await fetch(
+                    `http://127.0.0.1:5000/bookings/cancel/${bookingId}`,
+                    {
+                        method: "PATCH",
+                        headers: {
+                            Authorization: `Bearer ${authToken}`,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        data?.error || "Failed to cancel booking"
+                    );
+                }
+
+                // Update bookings in state (remove or update status)
+                setAppointments((prev) =>
+                    prev.map((booking) =>
+                        booking.id === bookingId
+                            ? { ...booking, status: "cancelled" }
+                            : booking
+                    )
+                );
+
+                toast.update(toastId, {
+                    render: data.success || "Booking cancelled successfully",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 3000,
+                });
+                
+                setOnChange(!onChange);
+
+                return true;
+
+            } catch (err) {
+                console.error("Cancel booking error:", err);
+
+                toast.update(toastId, {
+                    render: err.message,
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 4000,
+                });
+
+                return false;
+            }
+        };
+
+
+
+        // ===========Reschedule=============
+        const rescheduleBooking = async (bookingId, payload) => {
+            const toastId = toast.loading("Rescheduling booking...");
+
+            try {
+                const res = await fetch(
+                `http://127.0.0.1:5000/bookings/reschedule/${bookingId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                    Authorization: `Bearer ${authToken}`,
+                    "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                }
+                );
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                  throw new Error(data.error);
+                }
+
+                toast.update(toastId, {
+                    render: data.success,
+                    type: "success",
+                    isLoading: false,
+                });
+
+                setOnChange(!onChange);
+                return true;
+            } catch (err) {
+                toast.update(toastId, {
+                    render: err.message,
+                    type: "error",
+                    isLoading: false,
+                });
+                return false;
+            }
+        };
+
+  
+
+
+
+
+
+
 
         // =============Receipt ==========
         // const downloadReceipt = async (bookingId) => {
@@ -223,6 +333,8 @@ export const BookingProvider = ({children}) => {
         previewLoading,
         appointments,
         setAppointments,
+        cancelBooking,
+        rescheduleBooking
         // downloadReceipt
     }
 

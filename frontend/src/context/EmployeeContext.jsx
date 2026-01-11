@@ -168,6 +168,7 @@ export const EmployeeProvider = ({children}) => {
                 isLoading: false,
                 autoClose: 3000,
             });
+            setOnChange(!onChange);
 
         } catch (err) {
             console.error("Reminder fetch error:", err);
@@ -187,7 +188,7 @@ export const EmployeeProvider = ({children}) => {
     // Auto-fetch on login
     useEffect(() => {
         fetchUpcomingAppointments();
-    }, [authToken]);
+    }, [authToken, onChange]);
 
 
 
