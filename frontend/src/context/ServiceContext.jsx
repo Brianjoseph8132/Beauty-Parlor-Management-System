@@ -148,7 +148,7 @@ export const ServiceProvider = ({ children }) => {
         .catch((error) =>
             console.error("Error fetching services:", error)
         );
-    }, [authToken]);
+    }, [authToken, onChange]);
 
 
     // Add Service 
@@ -159,34 +159,34 @@ export const ServiceProvider = ({ children }) => {
             let imageUrl = null
 
             if (imageFile) {
-            const upload = await uploadToCloudinary(imageFile)
-            imageUrl = upload.secure_url
+                const upload = await uploadToCloudinary(imageFile)
+                imageUrl = upload.secure_url
             }
 
             const res = await fetch("http://127.0.0.1:5000/service", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${authToken}`,
-            },
-            body: JSON.stringify({
-                title,
-                description,
-                duration_minutes,
-                price,
-                image: imageUrl,
-                category_name
-            }),
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`,
+                },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    duration_minutes,
+                    price,
+                    image: imageUrl,
+                    category_name
+                }),
             })
 
             const response = await res.json()
             toast.dismiss()
 
             if (response.success) {
-            toast.success(response.success)
-            setOnChange(!onChange)
+                toast.success(response.success)
+                setOnChange(!onChange)
             } else {
-            toast.error(response.error || "Failed to add service")
+                toast.error(response.error || "Failed to add service")
             }
         } catch (error) {
             toast.dismiss()
@@ -227,36 +227,36 @@ export const ServiceProvider = ({ children }) => {
 
             let imageUrl = null
             if (imageFile) {
-            const upload = await uploadToCloudinary(imageFile)
-            imageUrl = upload.secure_url
+                const upload = await uploadToCloudinary(imageFile)
+                imageUrl = upload.secure_url
             }
 
             const payload = {
-            title,
-            description,
-            duration_minutes,
-            price,
-            category_name,
-            ...(imageUrl && { image: imageUrl })
+                title,
+                description,
+                duration_minutes,
+                price,
+                category_name,
+                ...(imageUrl && { image: imageUrl })
             }
 
             const res = await fetch(`http://127.0.0.1:5000/services/${service_id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${authToken}`,
-            },
-            body: JSON.stringify(payload),
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`,
+                },
+                body: JSON.stringify(payload),
             })
 
             const response = await res.json()
             toast.dismiss()
 
             if (response.message) {
-            toast.success(response.message)
-            setOnChange(!onChange)
+                toast.success(response.message)
+                setOnChange(!onChange)
             } else {
-            toast.error(response.error || "Update failed")
+                toast.error(response.error || "Update failed")
             }
         } catch (err) {
             toast.dismiss()
@@ -265,21 +265,23 @@ export const ServiceProvider = ({ children }) => {
     }
 
 
-    // Delete  Service
-    const deleteService = (service_id) => {
-        toast.loading("Deleting Service... ");
-
-        fetch(`http://127.0.0.1:5000/service-del/${service_id}`, {
-            method: "DELETE",
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            }
-        })
-        .then((resp) => resp.json())
-        .then((response) => {
+    
+   // Delete Service
+    const deleteService = async (service_id) => {
+        try {
+            toast.loading("Deleting Service...");
+            
+            const res = await fetch(`http://127.0.0.1:5000/service-del/${service_id}`, {
+                method: "DELETE",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            const response = await res.json();
             toast.dismiss();
-
+            
             if (response.message) {
                 toast.success(response.message);
                 setOnChange(!onChange);
@@ -288,12 +290,11 @@ export const ServiceProvider = ({ children }) => {
             } else {
                 toast.error("Failed to delete service.");
             }
-        })
-        .catch((error) => {
+        } catch (error) {
             toast.dismiss();
             toast.error("Error deleting service.");
             console.error("Delete Service Error:", error);
-        });
+        }
     };
 
 

@@ -97,7 +97,7 @@ def get_service(service_id):
 # Update 
 @service_bp.route("/services/<int:service_id>", methods=["PUT"])
 @jwt_required()
-# @admin_required
+@admin_required
 def update_service(service_id):
     data = request.get_json()
 
@@ -154,7 +154,7 @@ def update_service(service_id):
 
 @service_bp.route("/service-del/<int:service_id>", methods=["DELETE"])
 @jwt_required()
-# @admin_required
+@admin_required
 def delete_service(service_id):
     # Find the service
     service = Service.query.get(service_id)
