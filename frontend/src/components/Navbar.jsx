@@ -1,28 +1,349 @@
 import { useContext, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, LogOut } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
 import { UserContext } from "../context/UserContext";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-
-  // Check if user is logged in (you can replace this with your auth logic)
-  // const [isLoggedIn, setIsLoggedIn] = useState(true); // Change to false if not logged in
-  const{ logout, current_user } = useContext(UserContext)
+  const { logout, current_user } = useContext(UserContext);
 
   const isActive = (path) => location.pathname === path;
 
-  // const handleLogout = () => {
-  //   // Add your logout logic here
-  //   console.log("User logged out");
-  //   setIsLoggedIn(false);
-  //   navigate("/login");
-  //   setMobileMenuOpen(false);
-  // };
+  const handleMobileLogout = () => {
+    logout();
+    setMobileMenuOpen(false);
+  };
+
+  // Navigation items based on user state
+  const getNavItems = () => {
+    if (current_user?.is_admin) {
+      // Admin navigation
+      return (
+        <>
+          <Link
+            to="/"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            to="/service-management"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/service-management")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Management
+          </Link>
+          <motion.button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </motion.button>
+        </>
+      );
+    } else if (current_user) {
+      // Regular logged-in user navigation
+      return (
+        <>
+          <Link
+            to="/"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            to="/service"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/service")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Services
+          </Link>
+          <Link
+            to="/history"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/history")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            History
+          </Link>
+          <Link
+            to="/profile"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/profile")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Profile
+          </Link>
+          <motion.button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </motion.button>
+        </>
+      );
+    } else {
+      // Guest navigation (not logged in)
+      return (
+        <>
+          <Link
+            to="/about"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/about")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            About
+          </Link>
+          <Link
+            to="/contact"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/contact")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Contact
+          </Link>
+          <Link
+            to="/service"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/service")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Services
+          </Link>
+          <Link
+            to="/login"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/login")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Login
+          </Link>
+          <Link
+            to="/signup"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/signup")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Sign Up
+          </Link>
+        </>
+      );
+    }
+  };
+
+  // Mobile navigation items
+  const getMobileNavItems = () => {
+    if (current_user?.is_admin) {
+      return (
+        <>
+          <Link
+            to="/"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Home
+          </Link>
+          <Link
+            to="/service-management"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/service-management")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Management
+          </Link>
+          <button
+            onClick={handleMobileLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </>
+      );
+    } else if (current_user) {
+      return (
+        <>
+          <Link
+            to="/"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Home
+          </Link>
+          <Link
+            to="/service"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/service")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Services
+          </Link>
+          <Link
+            to="/history"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/history")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            History
+          </Link>
+          <Link
+            to="/profile"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/profile")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Profile
+          </Link>
+          <button
+            onClick={handleMobileLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <Link
+            to="/about"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/about")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            About
+          </Link>
+          <Link
+            to="/contact"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/contact")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Contact
+          </Link>
+          <Link
+            to="/service"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/service")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Services
+          </Link>
+          <Link
+            to="/login"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/login")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Login
+          </Link>
+          <Link
+            to="/signup"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/signup")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Sign Up
+          </Link>
+        </>
+      );
+    }
+  };
 
   return (
     <>
@@ -31,8 +352,7 @@ const Navbar = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             {/* Logo Section */}
-            <Link
-             to="/">
+            <Link to="/">
               <motion.div
                 className="flex items-center space-x-2 -ml-3"
                 initial={{ opacity: 0, x: -100 }}
@@ -66,137 +386,7 @@ const Navbar = () => {
               }}
               className="hidden md:flex items-center space-x-6"
             >
-
-              {/* Conditional Login/Signup or Logout */}
-              {current_user ? (
-                <>
-                  <Link
-                    to="/"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Home
-                  </Link>
-                  <Link
-                    to="/history"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/history")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    History
-                  </Link>
-                  <Link
-                    to="/profile"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/profile")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Profile
-                  </Link>
-                  <motion.button
-                    onClick={logout}
-                    className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </motion.button>
-                </>
-
-              ) : (
-                <>
-                  <Link
-                    to="/about"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/about")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    About
-                  </Link>
-                  <Link
-                    to="/contact"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/contact")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Contact
-                  </Link>
-                  <Link
-                    to="/service"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/service")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Service
-                  </Link>
-                  {/* <Link
-                    to="/reminder"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/reminder")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Reminder
-                  </Link> */}
-                  {/* <Link
-                    to="/single"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/single")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Profile
-                  </Link> */}
-                  <Link
-                    to="/login"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/login")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                    ${
-                      isActive("/signup")
-                        ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
-                        : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                    }`}
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-    
-
+              {getNavItems()}
             </motion.div>
 
             {/* Mobile Menu Icon */}
@@ -231,84 +421,7 @@ const Navbar = () => {
                       backdrop-blur-sm flex flex-col items-center justify-center 
                       space-y-4 shadow-lg"
           >
-            {/* Mobile Conditional Login/Signup or Logout */}
-            {current_user ? (
-              <> 
-                <Link
-                  to="/"
-                  className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                  ${
-                    isActive("/")
-                      ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
-                      : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Home
-                </Link>
-                <button
-                  // onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
-              </>
-
-            ) : (
-              <>
-                <Link
-                  to="/about"
-                  className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                  ${
-                    isActive("/about")
-                      ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
-                      : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  About
-                </Link>
-                <Link
-                  to="/contact"
-                  className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                  ${
-                    isActive("/contact")
-                      ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
-                      : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Contact
-                </Link>
-                <Link
-                  to="/login"
-                  className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                  ${
-                    isActive("/login")
-                      ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
-                      : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/signup"
-                  className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
-                  ${
-                    isActive("/signup")
-                      ? "bg-[#D4AA7D]/20 text-[#D4AA7D]"
-                      : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Sign Up
-                </Link>
-              </>
-
-            )}
-                
+            {getMobileNavItems()}
           </div>
         </div>
       )}

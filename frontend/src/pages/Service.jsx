@@ -4,10 +4,12 @@ import { Search } from "lucide-react";
 import { ServiceContext } from "../context/ServiceContext";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { UserContext } from "../context/UserContext";
 
 
 const Service = () => {
   const { categories,services } = useContext(ServiceContext);
+  const {current_user } = useContext(UserContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,16 +48,37 @@ const Service = () => {
   };
 
   const handleBookNow = (service) => {
+    // Check if user is logged in
+    if (!current_user) {
+      // Redirect to login page if not logged in
+      navigate("/login", {
+        state: {
+          from: "/service",
+          message: "Please log in to book a service",
+          serviceData: {
+            serviceId: service.id,
+            title: service.title,
+            image: service.image,
+            duration: service.duration_minutes,
+            price: service.price,
+          }
+        }
+      });
+      return;
+    }
+
+    // If logged in, proceed to booking
     navigate("/book", {
       state: {
         serviceId: service.id,
         title: service.title,
-        image:service.image,
+        image: service.image,
         duration: service.duration_minutes,
         price: service.price,
       },
     });
   };
+
 
 
   const fadeInUp = {
@@ -198,7 +221,7 @@ const Service = () => {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          Book Now
+                          {current_user ? "Book Now" : "Login to Book"}
                         </motion.button>
                       </div>
                     </div>

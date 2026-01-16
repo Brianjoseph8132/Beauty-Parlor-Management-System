@@ -468,3 +468,172 @@ const Profile = () => {
 };
 
 export default Profile;
+
+
+
+
+
+
+ {/* Image Upload */}
+                // <div>
+                //   <label className="block text-[#EFD09E] mb-2 font-medium text-sm">
+                //     Service Image
+                //   </label>
+                //   <div className="flex items-center gap-4">
+                //     <label className="flex-1 cursor-pointer">
+                //       <div className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] hover:bg-[#EFD09E]/20 transition flex items-center gap-2">
+                //         <Upload className="w-5 h-5" />
+                //         <span>{imageFile ? imageFile.name : "Choose an image"}</span>
+                //       </div>
+                //       <input
+                //         type="file"
+                //         accept="image/*"
+                //         onChange={handleImageChange}
+                //         className="hidden"
+                //       />
+                //     </label>
+                //   </div>
+                //   {imagePreview && (
+                //     <div className="mt-3">
+                //       <img
+                //         src={imagePreview}
+                //         alt="Preview"
+                //         className="w-32 h-32 object-cover rounded-xl border-2 border-[#D4AA7D]/30"
+                //       />
+                //     </div>
+                //   )}
+                // </div>
+
+// import { Plus, Edit2, Trash2, X, Search, Filter, Clock, DollarSign, Upload } from "lucide-react";
+// const { categories,services, deleteService, addService } = useContext(ServiceContext);
+// const [imageFile, setImageFile] = useState(null);
+//   const [imagePreview, setImagePreview] = useState(null);
+
+//   const [formData, setFormData] = useState({
+//     title: "",
+//     category_name: "",
+//     price: "",
+//     duration: "",
+//     description: "",
+//   });
+
+//   const categoryOptions = ["All", ...categories];
+
+
+//   const handleInputChange = (e) => {
+//     setFormData({
+//       ...formData,
+//       [e.target.name]: e.target.value,
+//     });
+//   };
+
+
+//     const handleImageChange = (e) => {
+//         const file = e.target.files[0]; 
+//         if (file) { 
+//             setImageFile(file); 
+//             // Create preview 
+//             const reader = new FileReader(); 
+//             reader.onloadend = () => { 
+//                 setImagePreview(reader.result); 
+//             }; 
+//             reader.readAsDataURL(file); 
+//         } 
+//     };
+
+//     const handleAddService = async () => { 
+//         // Convert duration format from "1h 30min" to minutes 
+//         const durationInMinutes = parseDurationToMinutes(formData.duration);
+//         await addService( 
+//             formData.title, // title 
+//             formData.description, // description 
+//             durationInMinutes, // duration_minutes 
+//             formData.price, // price 
+//             imageFile, // imageFile 
+//             formData.category_name  // category_name 
+//         ); 
+//         // Reset form and close modal 
+//         setIsAddModalOpen(false); 
+//         setFormData({ 
+//             title: "", 
+//             category_name : "", 
+//             price: "", 
+//             duration: "", 
+//             description: "", 
+//         }); setImageFile(null); 
+//         setImagePreview(null); 
+//     };
+
+//     // Helper function to convert duration format to minutes 
+//     const parseDurationToMinutes = (duration) => { 
+//         if (!duration) return 0;
+
+//         let totalMinutes = 0; 
+//         const hoursMatch = duration.match(/(\d+)h/); 
+//         const minutesMatch = duration.match(/(\d+)min/); 
+//         if (hoursMatch) { 
+//             totalMinutes += parseInt(hoursMatch[1]) * 60; 
+//         } 
+//         if (minutesMatch) { 
+//             totalMinutes += parseInt(minutesMatch[1]); 
+//         } 
+//         return totalMinutes; 
+//     };
+
+
+//   const handleEditClick = (service) => {
+//     setSelectedService(service);
+//     setFormData({
+//       title: service.title,
+//       category: service.category,
+//       price: service.price,
+//       duration: service.duration,
+//       description: service.description,
+//     });
+//     setIsEditModalOpen(true);
+//   };
+
+//   const handleUpdateService = () => {
+//     // setServices(
+//     //   services.map((service) =>
+//     //     service.id === selectedService.id
+//     //       ? { ...service, ...formData }
+//     //       : service
+//     //   )
+//     // );
+//     setIsEditModalOpen(false);
+//     setSelectedService(null);
+//     setFormData({
+//       title: "",
+//       category: "",
+//       price: "",
+//       duration: "",
+//       description: "",
+//     });
+//   };
+
+//   const handleDeleteClick = (service) => {
+//     setSelectedService(service);
+//     setIsDeleteModalOpen(true);
+//   };
+
+//  const handleDeleteService = () => {
+//     deleteService(selectedService.id);
+//     setIsDeleteModalOpen(false);
+//     setSelectedService(null);
+//     };
+
+//   const filteredServices = services.filter((service) => {
+//     const matchesCategory = categoryFilter === "All" || service.category.name === categoryFilter;
+//     const matchesSearch = service.title.toLowerCase().includes(searchTerm.toLowerCase());
+//     return matchesCategory && matchesSearch;
+//   });
+
+//   const fadeInUp = {
+//     hidden: { opacity: 0, y: 30 },
+//     visible: {
+//       opacity: 1,
+//       y: 0,
+//       transition: { duration: 0.6, ease: "easeOut" },
+//     },
+//   };

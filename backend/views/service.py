@@ -1,15 +1,15 @@
 from models import Service,db, Category
 from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-# from decorator import admin_required
+from decorator import admin_required
 
 
 service_bp = Blueprint("service_bp", __name__)
 
 # Add service
 @service_bp.route("/service", methods=["POST"])
-# @jwt_required()
-# @admin_required
+@jwt_required()
+@admin_required
 def add_service():
     data = request.get_json()
 
@@ -164,5 +164,5 @@ def delete_service(service_id):
     db.session.delete(service)
     db.session.commit()
 
-    return jsonify({"message": f"Service '{service.title}' deleted successfully"}), 200
+    return jsonify({"message": f"Service deleted successfully"}), 200
 

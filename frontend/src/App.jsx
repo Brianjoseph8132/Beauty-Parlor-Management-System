@@ -19,6 +19,7 @@ import Profile from './pages/Profile'
 import { EmployeeProvider } from './context/EmployeeContext'
 import AppointmentReminder from './components/AppointmentReminder'
 import SingleService from './pages/SingleService'
+import ServiceManagement from './pages/ServiceManagement'
 
 function App() {
   
@@ -48,6 +49,7 @@ function App() {
                 <Route path='/profile' element={<Profile/>}/>
                 <Route path='/reminder' element={<AppointmentReminder/>}/>
                 <Route path='/single/:id' element={<SingleService/>}/>
+                <Route path='/service-management' element={<ServiceManagement/>}/>
                 </Route>
               </Route>
             </Routes>
