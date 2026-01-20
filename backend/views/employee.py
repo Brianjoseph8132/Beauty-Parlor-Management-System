@@ -120,11 +120,18 @@ def add_employee():
 
 
 # Fetch Employee
-@employee_bp.route("/employee/<int:employee_id>", methods=["GET"])
-def get_employee_profile(employee_id):
-    employee = Employee.query.get(employee_id)
+@employee_bp.route("/employee-profile", methods=["GET"])
+@jwt_required()
+def get_my_employee_profile():
+    user_id = get_jwt_identity()
+
+    employee = Employee.query.filter_by(user_id=user_id).first()
     if not employee:
-        return jsonify({"error": "Employee not found"}), 404
+        return jsonify({"error": "Employee profile not found"}), 404
+
+    # Restrict to beauticians
+    if not employee.user.is_beautician:
+        return jsonify({"error": "Only beauticians can access this endpoint"}), 403
 
     work_days_list = [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP]
 
@@ -137,12 +144,12 @@ def get_employee_profile(employee_id):
         "skills": [s.title for s in employee.skills],
         "other_skills": employee.other_skills.split(",") if employee.other_skills else [],
         "is_active": employee.is_active,
-        "employee_profile_picture":employee.employee_profile_picture
+        "employee_profile_picture": employee.employee_profile_picture,
+        "username": employee.user.username,
+        "email": employee.user.email,
     }
 
     return jsonify({"employee": employee_data}), 200
-
-
 
 
 # Update Employee
@@ -203,10 +210,10 @@ def update_employee(employee_id):
         employee.other_skills = ",".join(other_skills_list) if other_skills_list else None
 
     # Update active/override
-    if "is_active" in data:
-        employee._is_active = data["is_active"]
-    if "override_active" in data:
-        employee.override_active = data["override_active"]
+    # if "is_active" in data:
+    #     employee._is_active = data["is_active"]
+    # if "override_active" in data:
+    #     employee.override_active = data["override_active"]
     
     if "employee_profile_picture" in data:
         employee.employee_profile_picture = data["employee_profile_picture"]
@@ -226,10 +233,7 @@ def update_employee(employee_id):
         "employee_profile_picture": employee.employee_profile_picture
     }
 
-    return jsonify({"message": "Employee updated successfully", "employee": employee_data}), 200
-
-
-
+    return jsonify({"message": "Employee updated successfully"}), 200
 
 
 # Delete 

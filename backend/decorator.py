@@ -17,18 +17,18 @@ def admin_required(fn):
     return wrapper
 
 
-# def beautician_required(fn):
-#     @wraps(fn)
-#     def wrapper(*args, **kwargs):
-#         verify_jwt_in_request()
-#         user_id = get_jwt_identity()
-#         user = User.query.get(user_id)
+def beautician_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
 
-#         if not user or not user.is_beautician:
-#             return jsonify({"error": "Beautician access required"}), 403
+        if not user or not user.is_beautician:
+            return jsonify({"error": "Beautician access required"}), 403
 
-#         return fn(*args, **kwargs)
-#     return wrapper
+        return fn(*args, **kwargs)
+    return wrapper
 
 
 # def receptionist_required(fn):

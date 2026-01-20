@@ -12,6 +12,7 @@ from reportlab.pdfgen import canvas
 import io
 from .receipt import generate_receipt_pdf
 from sqlalchemy.orm import joinedload
+from decorator import beautician_required
 # from decorator import admin_required
 
 
@@ -821,6 +822,7 @@ def get_booking_details(booking_id):
 # Fetch all Bookings
 @booking_bp.route("/beautician/bookings", methods=["GET"])
 @jwt_required()
+@beautician_required
 def get_beautician_bookings():
     current_user_id = get_jwt_identity()
 

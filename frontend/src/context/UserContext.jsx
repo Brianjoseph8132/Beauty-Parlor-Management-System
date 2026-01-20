@@ -292,7 +292,7 @@ export const UserProvider = ({ children }) => {
         .then((response) => {
             toast.dismiss();
             if (response.success && response.updatedUser) {
-                // ✅ Update the current user in context
+                // Update the current user in context
                 setCurrentUser(response.updatedUser);
                 toast.success("User updated successfully!");
             } else {

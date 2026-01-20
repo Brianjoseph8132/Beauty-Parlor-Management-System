@@ -20,6 +20,7 @@ import { EmployeeProvider } from './context/EmployeeContext'
 import AppointmentReminder from './components/AppointmentReminder'
 import SingleService from './pages/SingleService'
 import ServiceManagement from './pages/ServiceManagement'
+import BeauticianProfile from './pages/BeauticianProfile'
 
 function App() {
   
@@ -50,6 +51,7 @@ function App() {
                 <Route path='/reminder' element={<AppointmentReminder/>}/>
                 <Route path='/single/:id' element={<SingleService/>}/>
                 <Route path='/service-management' element={<ServiceManagement/>}/>
+                <Route path='/beauticianprofile' element={<BeauticianProfile/>}/>
                 </Route>
               </Route>
             </Routes>

@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData, ForeignKey, CheckConstraint
 from sqlalchemy import Numeric, CheckConstraint, Enum, Index
 from sqlalchemy.ext.hybrid import hybrid_property
-from datetime import time, datetime
+from datetime import time, datetime,  date
 from utils.availability import is_employee_available
 
 metadata = MetaData()
@@ -180,6 +180,46 @@ class Allergy(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     user = db.relationship("User", back_populates="allergies")
+
+
+
+class Attendance(db.Model):
+    __tablename__ = "attendance"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id", ondelete="CASCADE"),nullable=False)
+    date = db.Column(db.Date, default=date.today, nullable=False)
+    check_in = db.Column(db.DateTime, nullable=True)
+    check_out = db.Column(db.DateTime, nullable=True)
+
+    status = db.Column(
+        db.Enum(
+            "Present",
+            "Absent",
+            "Late",
+            "Half-Day",
+            "On Leave",
+            name="attendance_status"
+        ),
+        default="Present",
+        nullable=False
+    )
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # relationship
+    employee = db.relationship("Employee",backref=db.backref("attendance_records",cascade="all, delete-orphan"))
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "employee_id",
+            "date",
+            name="unique_employee_attendance_per_day"
+        ),
+    )
+
+    def __repr__(self):
+        return f"<Attendance employee={self.employee_id} date={self.date}>"
+
 
 class TokenBlocklist(db.Model):
     __tablename__ = 'token_blocklist'

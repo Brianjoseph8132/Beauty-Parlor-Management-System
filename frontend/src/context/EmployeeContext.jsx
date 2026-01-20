@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { UserContext } from "./UserContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { uploadToCloudinary } from "../api/Cloudinary"
 
 
 
@@ -12,6 +13,7 @@ export const EmployeeProvider = ({children}) => {
     const {authToken} = useContext(UserContext);
     const [allergies, setAllergies] = useState([]);
     const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+    const [employee, setEmployee] = useState(null);
 
     const [onChange, setOnChange] = useState(true);
 
@@ -191,6 +193,102 @@ export const EmployeeProvider = ({children}) => {
     }, [authToken]);
 
 
+    // ==============Employee============
+    const fetchMyEmployeeProfile = async () => {
+        if (!authToken) return;
+
+        const toastId = toast.loading("Fetching employee profile...");
+
+        try {
+            const res = await fetch("http://127.0.0.1:5000/employee-profile", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+            },
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch employee profile");
+            }
+
+            setEmployee(data.employee);
+
+            toast.update(toastId, {
+                render: "Employee profile loaded",
+                type: "success",
+                isLoading: false,
+                autoClose: 2000,
+            });
+        } catch (err) {
+            console.error("Fetch Employee Error:", err);
+
+            toast.update(toastId, {
+                render: err.message || "Failed to fetch employee profile",
+                type: "error",
+                isLoading: false,
+                autoClose: 3000,
+            });
+        } 
+    };
+
+    // Auto-fetch when token becomes available
+    useEffect(() => {
+        fetchMyEmployeeProfile();
+    }, [authToken]);
+
+
+    
+    // =========Update========
+    const updateEmployeeProfile = async (imageFile) => {
+        toast.loading("Updating Profile Picture...");
+        
+        try {
+            let imageUrl = null;
+
+            if (imageFile) {
+                const upload = await uploadToCloudinary(imageFile);
+                imageUrl = upload.secure_url;
+            }
+            
+            const response = await fetch("http://127.0.0.1:5000/employee/profile-picture", {
+                method: "PUT", 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({
+                    employee_profile_picture: imageUrl
+                })
+            });
+
+            const data = await response.json();
+            
+            toast.dismiss();
+
+            if (response.ok) {
+                // Update employee state with the returned employee object
+                setEmployee(prevEmployee => ({
+                    ...prevEmployee,
+                    ...data.employee
+                }));
+                toast.success(data.message || "Profile picture updated successfully!");
+            } else {
+                toast.error(data.error || "Failed to update profile picture.");
+            }
+        } catch (error) {
+            toast.dismiss();
+            console.error("Update profile picture error:", error);
+            toast.error("An error occurred: " + error.message);
+        }
+    };
+    
+    
+
+
+
 
     const data = {
         allergies,
@@ -198,7 +296,10 @@ export const EmployeeProvider = ({children}) => {
         addAllergy,
         updateAllergy,
         setAllergies,
-        upcomingAppointments
+        upcomingAppointments,
+        employee,
+        updateEmployeeProfile
+
       
     }
 
