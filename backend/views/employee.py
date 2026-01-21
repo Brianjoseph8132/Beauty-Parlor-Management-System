@@ -115,7 +115,7 @@ def add_employee():
         "profile_picture": employee.employee_profile_picture
     }
 
-    return jsonify({"message": "Employee added successfully", "employee": employee_data}), 201
+    return jsonify({"success": "Employee added successfully"}), 201
 
 
 

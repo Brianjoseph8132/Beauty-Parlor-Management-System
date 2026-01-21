@@ -4,58 +4,7 @@ import { Plus, Edit2, Trash2, X, Search, Filter, Clock, User, Camera } from "luc
 import { EmployeeContext } from "../context/EmployeeContext";
 
 const EmployeeManagement = () => {
-  const {employees, deleteEmployee} = useContext(EmployeeContext);
-  // const [employees, setEmployees] = useState([
-  //   {
-  //     id: 1,
-  //     fullName: "Sarah Johnson",
-  //     username: "sarah_beauty",
-  //     email: "sarah.johnson@bpms.com",
-  //     phone: "+254 123 456 789",
-  //     profilePicture: "",
-  //     workingHours: { start: "09:00", end: "17:00" },
-  //     workingDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-  //     skills: ["Hair Styling", "Makeup Artist"],
-  //     experience: "5 years",
-  //   },
-  //   {
-  //     id: 2,
-  //     fullName: "Emily Davis",
-  //     username: "emily_nails",
-  //     email: "emily.davis@bpms.com",
-  //     phone: "+254 987 654 321",
-  //     profilePicture: "",
-  //     workingHours: { start: "10:00", end: "18:00" },
-  //     workingDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Saturday"],
-  //     skills: ["Nail Art", "Pedicure"],
-  //     experience: "3 years",
-  //   },
-  //   {
-  //     id: 3,
-  //     fullName: "Amanda Lee",
-  //     username: "amanda_spa",
-  //     email: "amanda.lee@bpms.com",
-  //     phone: "+254 555 123 456",
-  //     profilePicture: "",
-  //     workingHours: { start: "08:00", end: "16:00" },
-  //     workingDays: ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-  //     skills: ["Massage", "Facial Treatment"],
-  //     experience: "4 years",
-  //   },
-  //   {
-  //     id: 4,
-  //     fullName: "Michael Brown",
-  //     username: "michael_massage",
-  //     email: "michael.brown@bpms.com",
-  //     phone: "+254 777 888 999",
-  //     profilePicture: "",
-  //     workingHours: { start: "09:00", end: "17:00" },
-  //     workingDays: ["Monday", "Wednesday", "Thursday", "Friday", "Sunday"],
-  //     skills: ["Deep Tissue Massage", "Swedish Massage"],
-  //     experience: "6 years",
-  //   },
-  // ]);
-
+  const {employees, deleteEmployee,addEmployee} = useContext(EmployeeContext);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);

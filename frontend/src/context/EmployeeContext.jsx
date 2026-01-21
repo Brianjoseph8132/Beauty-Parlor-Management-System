@@ -256,7 +256,53 @@ export const EmployeeProvider = ({children}) => {
     };
 
 
-    // =========Update========
+    // Add Employee
+    const addEmployee = async (username,full_name,work_start,work_end,imageFile,work_days, skills, other_skills,role) => {
+        try {
+            toast.loading("Adding Employee...")
+
+            let imageUrl = null
+
+            if (imageFile) {
+                const upload = await uploadToCloudinary(imageFile)
+                imageUrl = upload.secure_url
+            }
+
+            const res = await fetch("http://127.0.0.1:5000/employee", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`,
+                },
+                body: JSON.stringify({
+                    username,
+                    full_name,
+                    work_start,
+                    work_end,
+                    work_days,
+                    skills,
+                    other_skills,
+                    profile_picture: imageUrl,
+                    role
+                    
+                }),
+            })
+
+            const response = await res.json()
+            toast.dismiss()
+
+            if (response.success) {
+                toast.success(response.success)
+                setOnChange(!onChange)
+            } else {
+                toast.error(response.error || "Failed to add employee")
+            }
+        } catch (error) {
+            toast.dismiss()
+            toast.error("Error adding employee")
+            console.error(error)
+        }
+    }
    
     
      
@@ -310,10 +356,9 @@ export const EmployeeProvider = ({children}) => {
         setAllergies,
         upcomingAppointments,
         employees,
-        deleteEmployee
+        deleteEmployee,
+        addEmployee
        
-
-      
     }
 
     return (
