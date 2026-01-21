@@ -2,15 +2,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useContext, useState } from "react";
 import { Plus, Edit2, Trash2, X, Search, Filter, Clock, User, Camera } from "lucide-react";
 import { EmployeeContext } from "../context/EmployeeContext";
+import { ServiceContext } from "../context/ServiceContext";
 
 const EmployeeManagement = () => {
   const {employees, deleteEmployee,addEmployee} = useContext(EmployeeContext);
+  const {services} = useContext(ServiceContext);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [profileImageFile, setProfileImageFile] = useState(null)
   const employeesPerPage = 5;
 
   const [formData, setFormData] = useState({
@@ -21,6 +24,7 @@ const EmployeeManagement = () => {
     workingHours: { work_start: "", work_end: "" },
     work_days: [],
     skills: [],
+    other_skills:[],
     role: "",
   });
 
@@ -67,30 +71,50 @@ const EmployeeManagement = () => {
     });
   };
 
+
+  const handleSkillToggle = (skill) => {
+    const updatedSkills = formData.skills.includes(skill)
+      ? formData.skills.filter(s => s !== skill)
+      : [...formData.skills, skill];
+    
+    setFormData({
+      ...formData,
+      skills: updatedSkills,
+    });
+  };
+
+
+  
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setProfileImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePicturePreview(reader.result);
-        setFormData({
-          ...formData,
-          employee_profile_picture: reader.result,
-        });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleAddEmployee = () => {
-    const newEmployee = {
-      id: employees.length + 1,
-      ...formData,
-    };
-    // setEmployees([...employees, newEmployee]);
+
+  const handleAddEmployee = async () => {
+    await addEmployee(
+      formData.username,
+      formData.full_name,
+      formData.workingHours.work_start,
+      formData.workingHours.work_end,
+      profileImageFile,
+      formData.work_days,
+      formData.skills,
+      formData.other_skills,
+      formData.role
+    );
+
     setIsAddModalOpen(false);
     resetForm();
   };
+
 
   const handleEditClick = (employee) => {
     setSelectedEmployee(employee);
@@ -103,8 +127,10 @@ const EmployeeManagement = () => {
       work_days: employee.work_days,
       skills: employee.skills,
       role: employee.role,
+      other_skills:employee.other_skills || [],
     });
     setIsEditModalOpen(true);
+    setProfilePicturePreview(employee.employee_profile_picture);
   };
 
   const handleUpdateEmployee = () => {
@@ -140,9 +166,11 @@ const EmployeeManagement = () => {
       workingHours: { work_start: "", work_end: "" },
       work_days: [],
       skills: [],
+      other_skills: [],
       role: "",
     });
     setProfilePicturePreview(null);
+    setProfileImageFile(null)
   };
 
   const filteredEmployees = employees.filter((employee) =>
@@ -282,11 +310,6 @@ const EmployeeManagement = () => {
                           {employee.work_start} - {employee.work_end}
                         </div>
                       </td>
-                      {/* <td className="px-6 py-4">
-                        <span className="inline-block px-3 py-1 bg-[#D4AA7D]/20 text-[#D4AA7D] rounded-full text-sm font-medium">
-                          {employee.role}
-                        </span>
-                      </td> */}
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">
                           <motion.button
@@ -414,7 +437,7 @@ const EmployeeManagement = () => {
                 </button>
               </div>
 
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={(e) => {e.preventDefault(); isAddModalOpen ? handleAddEmployee() : handleUpdateEmployee(); }}>
                 {/* Profile Picture */}
                 <div className="flex flex-col items-center">
                   <div className="relative w-32 h-32 mb-4">
@@ -492,36 +515,22 @@ const EmployeeManagement = () => {
                     />
                   </div>
 
-                  {/* Phone */}
-                  {/* <div>
+                  {/* Role */}
+                  <div className="md:col-span-2">
                     <label className="block text-[#EFD09E] mb-2 font-medium text-sm">
-                      Phone
+                      Role
                     </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
+                    <select
+                      name="role"
+                      value={formData.role}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
-                      placeholder="+254 123 456 789"
-                    />
-                  </div> */}
-
-                  {/* Experience */}
-                  <div>
-                    <label className="block text-[#EFD09E] mb-2 font-medium text-sm">
-                      Experience
-                    </label>
-                    <input
-                      type="text"
-                      name="experience"
-                      value={formData.experience}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] placeholder-[#EFD09E]/40 focus:outline-none focus:border-[#D4AA7D] transition"
-                      placeholder="e.g., 5 years"
-                    />
+                      className="w-full px-4 py-3 bg-[#EFD09E]/10 border border-[#D4AA7D]/30 rounded-xl text-[#EFD09E] focus:outline-none focus:border-[#D4AA7D] transition"
+                    >
+                      <option value="">Select a role</option>
+                      <option value="beautician">Beautician</option>
+                      <option value="receptionist">Receptionist</option>
+                    </select>
                   </div>
                 </div>
 
@@ -579,11 +588,35 @@ const EmployeeManagement = () => {
                   </div>
                 </div>
 
+                {/* Skills (Only for Beautician) */}
+                {formData.role === "beautician" && (
+                  <div>
+                    <label className="block text-[#EFD09E] mb-3 font-medium text-sm">
+                      Skills (Services)
+                    </label>
+                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-[#EFD09E]/5 rounded-xl">
+                      {services.map((service) => (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() => handleSkillToggle(service.title)}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
+                            formData.skills.includes(service.title)
+                              ? "bg-[#D4AA7D] text-[#272727]"
+                              : "bg-[#EFD09E]/10 text-[#EFD09E] border border-[#D4AA7D]/30"
+                          }`}
+                        >
+                          {service.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Buttons */}
                 <div className="flex gap-4 pt-4">
                   <motion.button
-                    type="button"
-                    onClick={isAddModalOpen ? handleAddEmployee : handleUpdateEmployee}
+                    type="submit"
                     className="flex-1 bg-[#D4AA7D] text-[#272727] px-6 py-3 rounded-xl font-semibold hover:bg-[#EFD09E] transition"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
