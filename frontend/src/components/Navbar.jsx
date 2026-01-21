@@ -35,6 +35,17 @@ const Navbar = () => {
             Home
           </Link>
           <Link
+            to="/employee-management"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/employee-management")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Employees
+          </Link>
+          <Link
             to="/service-management"
             className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
             ${
@@ -43,7 +54,7 @@ const Navbar = () => {
                 : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
             }`}
           >
-            Management
+            Services
           </Link>
           <motion.button
             onClick={logout}

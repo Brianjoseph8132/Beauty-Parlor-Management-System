@@ -253,13 +253,14 @@ def delete_employee(employee_id):
     employee.skills = []
     user = employee.user
     user.is_beautician = False
+    user.is_receptionist=False
 
 
     # Delete employee
     db.session.delete(employee)
     db.session.commit()
 
-    return jsonify({"message": "Employee deleted successfully"}), 200
+    return jsonify({"success": "Employee deleted successfully"}), 200
 
 
 
@@ -273,6 +274,8 @@ def list_employees():
         employees_data.append({
             "id": employee.id,
             "full_name": employee.full_name,
+            "username": employee.user.username,
+            "email": employee.user.email,
             "work_start": employee.work_start.strftime("%H:%M"),
             "work_end": employee.work_end.strftime("%H:%M"),
             "work_days": [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP],

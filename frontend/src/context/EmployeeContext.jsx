@@ -13,7 +13,7 @@ export const EmployeeProvider = ({children}) => {
     const {authToken} = useContext(UserContext);
     const [allergies, setAllergies] = useState([]);
     const [upcomingAppointments, setUpcomingAppointments] = useState([]);
-    const [employee, setEmployee] = useState(null);
+    const [employees, setEmployees] = useState([]);
 
     const [onChange, setOnChange] = useState(true);
 
@@ -194,6 +194,27 @@ export const EmployeeProvider = ({children}) => {
 
 
     // ==============Employee============
+    useEffect(() => {
+        if (!authToken) return;
+
+        fetch("http://127.0.0.1:5000/employees", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+            },
+        })
+        .then((res) => res.json())
+        .then((response) => {
+            setEmployees(response.employees);
+        })
+        .catch((error) =>
+            console.error("Error fetching Employees:", error)
+        );
+    }, [authToken, onChange]);
+
+
+
     const fetchMyEmployeeProfile = async () => {
         if (!authToken) return;
 
@@ -234,59 +255,50 @@ export const EmployeeProvider = ({children}) => {
         } 
     };
 
-    // Auto-fetch when token becomes available
-    useEffect(() => {
-        fetchMyEmployeeProfile();
-    }, [authToken]);
 
-
-    
     // =========Update========
-    const updateEmployeeProfile = async (imageFile) => {
-        toast.loading("Updating Profile Picture...");
+   
+    
+     
+
+
+
+
+
+
+    // ========Delete===========
+    const deleteEmployee = (employee_id) => {
+        const toastId = toast.loading("Deleting employee...");
         
-        try {
-            let imageUrl = null;
-
-            if (imageFile) {
-                const upload = await uploadToCloudinary(imageFile);
-                imageUrl = upload.secure_url;
-            }
-            
-            const response = await fetch("http://127.0.0.1:5000/employee/profile-picture", {
-                method: "PUT", 
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify({
-                    employee_profile_picture: imageUrl
-                })
-            });
-
-            const data = await response.json();
-            
-            toast.dismiss();
-
-            if (response.ok) {
-                // Update employee state with the returned employee object
-                setEmployee(prevEmployee => ({
-                    ...prevEmployee,
-                    ...data.employee
-                }));
-                toast.success(data.message || "Profile picture updated successfully!");
+        fetch(`http://127.0.0.1:5000/employees/${employee_id}`, {
+            method: "DELETE",
+            headers: {
+            "Content-type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+            },
+        })
+            .then((resp) => resp.json())
+            .then((response) => {
+            if (response.success) {
+                toast.dismiss(toastId);
+                toast.success(response.success); 
+                setOnChange(!onChange);
+                
+                
+            } else if (response.error) {
+                toast.dismiss(toastId);
+                toast.error(response.error); 
             } else {
-                toast.error(data.error || "Failed to update profile picture.");
+                toast.dismiss(toastId);
+                toast.error("Failed to delete Employee");
             }
-        } catch (error) {
-            toast.dismiss();
-            console.error("Update profile picture error:", error);
-            toast.error("An error occurred: " + error.message);
-        }
+            })
+            .catch((err) => {
+                toast.dismiss(toastId);
+                toast.error("Error deleting employee"); 
+                console.error("Error deleting employee:", err);
+            });
     };
-    
-    
-
 
 
 
@@ -297,8 +309,9 @@ export const EmployeeProvider = ({children}) => {
         updateAllergy,
         setAllergies,
         upcomingAppointments,
-        employee,
-        updateEmployeeProfile
+        employees,
+        deleteEmployee
+       
 
       
     }
