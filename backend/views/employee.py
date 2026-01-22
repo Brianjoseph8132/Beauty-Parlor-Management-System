@@ -3,7 +3,7 @@ from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.constants import DAY_MAP, DAY_NAME_TO_NUM
 from datetime import time, datetime
-from decorator import admin_required
+from decorator import admin_required,beautician_required
 
 
 employee_bp = Blueprint("employee_bp", __name__)
@@ -126,6 +126,7 @@ def add_employee():
 # Fetch Employee
 @employee_bp.route("/employee-profile", methods=["GET"])
 @jwt_required()
+@beautician_required
 def get_my_employee_profile():
     user_id = get_jwt_identity()
 
@@ -133,9 +134,6 @@ def get_my_employee_profile():
     if not employee:
         return jsonify({"error": "Employee profile not found"}), 404
 
-    # Restrict to beauticians
-    if not employee.user.is_beautician:
-        return jsonify({"error": "Only beauticians can access this endpoint"}), 403
 
     work_days_list = [DAY_MAP[d] for d in employee.work_days.split(",") if d in DAY_MAP]
 
@@ -305,4 +303,38 @@ def list_employees():
         })
 
     return jsonify({"employees": employees_data}), 200
+
+
+
+
+# Fetch employee id 
+@employee_bp.route("/employee-profile/<int:employee_id>", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_employee_profile(employee_id):
+    employee = Employee.query.get(employee_id)
+    if not employee:
+        return jsonify({"error": "Employee profile not found"}), 404
+
+    work_days_list = [
+        DAY_MAP[d] for d in employee.work_days.split(",")
+        if d in DAY_MAP
+    ]
+
+    employee_data = {
+        "id": employee.id,
+        "full_name": employee.full_name,
+        "work_start": employee.work_start.strftime("%H:%M"),
+        "work_end": employee.work_end.strftime("%H:%M"),
+        "work_days": work_days_list,
+        "skills": [s.title for s in employee.skills],
+        "other_skills": employee.other_skills.split(",") if employee.other_skills else [],
+        "is_active": employee.is_active,
+        "employee_profile_picture": employee.employee_profile_picture,
+        "username": employee.user.username,
+        "email": employee.user.email,
+    }
+
+    return jsonify({"employee": employee_data}), 200
+
 

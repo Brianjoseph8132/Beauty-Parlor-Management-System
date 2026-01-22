@@ -22,6 +22,7 @@ import SingleService from './pages/SingleService'
 import ServiceManagement from './pages/ServiceManagement'
 import BeauticianProfile from './pages/BeauticianProfile'
 import EmployeeManagement from './pages/EmployeeManagement'
+import EmployeeProfile from './pages/EmployeeProfile'
 
 function App() {
   
@@ -54,6 +55,7 @@ function App() {
                 <Route path='/service-management' element={<ServiceManagement/>}/>
                 <Route path='/beauticianprofile' element={<BeauticianProfile/>}/>
                 <Route path='/employee-management' element={<EmployeeManagement/>}/>
+                <Route path='/employee-profile/:id' element={<EmployeeProfile/>}/>
                 </Route>
               </Route>
             </Routes>

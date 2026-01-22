@@ -242,6 +242,33 @@ export const EmployeeProvider = ({children}) => {
         }
     };
 
+    // Get employee (get by id)
+    const MyEmployeeProfile = async (employee_id) => {
+        try {
+            const res = await fetch(`http://127.0.0.1:5000/employee-profile/${employee_id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+
+            const response = await res.json();
+
+            if (response.employee) {
+                return response.employee;
+            } else if (response.error) {
+                toast.error(response.error);
+                return null;
+            }
+        } catch (error) {
+            toast.error("Error fetching employee profile");
+            console.error("Get Employee Profile Error:", error);
+            return null;
+        }
+    };
+
+
 
     // Add Employee
     const addEmployee = async (username,full_name,work_start,work_end,imageFile,work_days, skills, other_skills,role) => {
@@ -388,7 +415,8 @@ export const EmployeeProvider = ({children}) => {
         deleteEmployee,
         addEmployee,
         updateEmployee,
-        getMyEmployeeProfile
+        getMyEmployeeProfile,
+        MyEmployeeProfile
        
     }
 

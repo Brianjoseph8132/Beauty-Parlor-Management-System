@@ -3,6 +3,7 @@ import { useContext, useState } from "react";
 import { Plus, Edit2, Trash2, X, Search, Filter, Clock, User, Camera, CheckCircle, XCircle } from "lucide-react";
 import { EmployeeContext } from "../context/EmployeeContext";
 import { ServiceContext } from "../context/ServiceContext";
+import { Link } from "react-router-dom";
 
 const EmployeeManagement = () => {
   const {employees, deleteEmployee,addEmployee,updateEmployee} = useContext(EmployeeContext);
@@ -290,20 +291,24 @@ const EmployeeManagement = () => {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-[#D4AA7D] rounded-full flex items-center justify-center flex-shrink-0">
-                            {employee.employee_profile_picture ? (
-                              <img
-                                src={employee.employee_profile_picture}
-                                alt={employee.full_name}
-                                className="w-full h-full rounded-full object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
-                                }}
-                              />
-                            ) : null}
-                            <User className="w-6 h-6 text-[#272727]" style={{ display: employee.employee_profile_picture ? 'none' : 'block' }} />
-                          </div>
+                          <Link
+                          to={`/employee-profile/${employee.id}`}
+                          >
+                            <div className="w-12 h-12 bg-[#D4AA7D] rounded-full flex items-center justify-center flex-shrink-0">
+                              {employee.employee_profile_picture ? (
+                                <img
+                                  src={employee.employee_profile_picture}
+                                  alt={employee.full_name}
+                                  className="w-full h-full rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <User className="w-6 h-6 text-[#272727]" style={{ display: employee.employee_profile_picture ? 'none' : 'block' }} />
+                            </div>
+                          </Link>
                           <div>
                             <p className="font-semibold text-[#272727]">{employee.full_name}</p>
                             <p className="text-sm text-[#272727]/60">@{employee.username}</p>
