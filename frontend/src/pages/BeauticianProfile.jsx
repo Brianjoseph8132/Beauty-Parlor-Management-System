@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Clock, Briefcase } from "lucide-react";
 import { EmployeeContext } from "../context/EmployeeContext";
 
@@ -7,6 +7,23 @@ import { EmployeeContext } from "../context/EmployeeContext";
 const BeauticianProfile = () => {
   
   const { getMyEmployeeProfile } = useContext(EmployeeContext);
+  const [employee, setEmployee] = useState(null)
+
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await getMyEmployeeProfile();
+        if (profile) {
+          setEmployee(profile);
+        }
+      } catch (error) {
+        console.error("Failed to load employee profile", error);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   
 
