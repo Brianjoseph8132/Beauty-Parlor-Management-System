@@ -40,6 +40,8 @@ def add_employee():
 
     if user.employee:
         return jsonify({"error": "This user is already an employee"}), 400
+    
+    user.profile_picture = employee_profile_picture
 
 
     # Convert times
@@ -210,15 +212,17 @@ def update_employee(employee_id):
         employee.other_skills = ",".join(other_skills_list) if other_skills_list else None
 
     # Update active/override
-    # if "is_active" in data:
-    #     employee._is_active = data["is_active"]
-    # if "override_active" in data:
-    #     employee.override_active = data["override_active"]
+    if "is_active" in data:
+        employee._is_active = data["is_active"]
+
+    if "override_active" in data:
+        employee.override_active = data["override_active"]
     
     if "employee_profile_picture" in data:
-        employee.employee_profile_picture = data["employee_profile_picture"]
-
-    db.session.commit()
+        new_picture = data["employee_profile_picture"]
+        employee.employee_profile_picture = new_picture
+        employee.user.profile_picture = new_picture
+        db.session.commit()
 
     # Prepare response
     employee_data = {
@@ -233,7 +237,7 @@ def update_employee(employee_id):
         "employee_profile_picture": employee.employee_profile_picture
     }
 
-    return jsonify({"message": "Employee updated successfully"}), 200
+    return jsonify({"success": "Employee updated successfully"}), 200
 
 
 # Delete 

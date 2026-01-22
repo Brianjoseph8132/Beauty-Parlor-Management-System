@@ -302,7 +302,57 @@ export const EmployeeProvider = ({children}) => {
             toast.error("Error adding employee")
             console.error(error)
         }
-    }
+    };
+
+
+
+
+    // Update Employee
+    const updateEmployee = async (full_name,work_start,work_end,imageFile,work_days, skills, other_skills,employee_id,is_active) => {
+            try {
+                toast.loading("Updating Employee...")
+    
+                let imageUrl = null
+                if (imageFile) {
+                    const upload = await uploadToCloudinary(imageFile)
+                    imageUrl = upload.secure_url
+                }
+    
+                const payload = {
+                    full_name,
+                    work_start,
+                    work_end,
+                    work_days,
+                    skills,
+                    other_skills,
+                    is_active,
+                    ...(imageUrl && { employee_profile_picture: imageUrl })
+                }
+    
+                const res = await fetch(`http://127.0.0.1:5000/employees/${employee_id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify(payload),
+                })
+    
+                const response = await res.json()
+                toast.dismiss()
+    
+                if (response.success) {
+                    toast.success(response.success)
+                    setOnChange(!onChange)
+                } else {
+                    toast.error(response.error || "Update failed")
+                }
+            } catch (err) {
+                toast.dismiss()
+                toast.error("Error updating employee")
+            }
+    };
+    
    
     
      
@@ -357,7 +407,8 @@ export const EmployeeProvider = ({children}) => {
         upcomingAppointments,
         employees,
         deleteEmployee,
-        addEmployee
+        addEmployee,
+        updateEmployee
        
     }
 
