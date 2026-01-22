@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useContext, useState } from "react";
-import { Plus, Edit2, Trash2, X, Search, Filter, Clock, User, Camera } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Search, Filter, Clock, User, Camera, CheckCircle, XCircle } from "lucide-react";
 import { EmployeeContext } from "../context/EmployeeContext";
 import { ServiceContext } from "../context/ServiceContext";
 
@@ -26,6 +26,7 @@ const EmployeeManagement = () => {
     skills: [],
     other_skills:[],
     role: "",
+    is_active: true,
   });
 
   const [profilePicturePreview, setProfilePicturePreview] = useState(null);
@@ -128,6 +129,7 @@ const EmployeeManagement = () => {
       skills: employee.skills,
       role: employee.role,
       other_skills:employee.other_skills || [],
+      is_active: employee.is_active,
     });
     setIsEditModalOpen(true);
     setProfilePicturePreview(employee.employee_profile_picture);
@@ -138,12 +140,12 @@ const EmployeeManagement = () => {
       formData.full_name,
       formData.workingHours.work_start,
       formData.workingHours.work_end,
-      editProfileImageFile,
+      profileImageFile,
       formData.work_days,
       formData.skills,
       formData.other_skills,
       selectedEmployee.id,
-      selectedEmployee.is_active
+      formData.is_active
     );
 
     setIsEditModalOpen(false);
@@ -272,6 +274,7 @@ const EmployeeManagement = () => {
                   <th className="px-6 py-4 text-left font-semibold">Employee</th>
                   <th className="px-6 py-4 text-left font-semibold">Email</th>
                   <th className="px-6 py-4 text-left font-semibold">Working Hours</th>
+                  <th className="px-6 py-4 text-center font-semibold">Status</th>
                   <th className="px-6 py-4 text-center font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -314,6 +317,27 @@ const EmployeeManagement = () => {
                         <div className="flex items-center gap-1 text-[#272727]">
                           <Clock className="w-4 h-4 text-[#D4AA7D]" />
                           {employee.work_start} - {employee.work_end}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center">
+                          <button
+                            onClick={() => handleToggleStatus(employee)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              employee.is_active ? 'bg-green-500' : 'bg-gray-400'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                employee.is_active ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                          <span className={`ml-2 text-sm font-medium ${
+                            employee.is_active ? 'text-green-600' : 'text-gray-500'
+                          }`}>
+                            {employee.is_active ? 'Active' : 'Inactive'}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -615,6 +639,39 @@ const EmployeeManagement = () => {
                           {service.title}
                         </button>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+
+                {/* Active Status Toggle (Only in Edit Mode) */}
+                {isEditModalOpen && (
+                  <div>
+                    <label className="block text-[#EFD09E] mb-3 font-medium text-sm">
+                      Employee Status
+                    </label>
+                    <div className="flex items-center gap-3 p-4 bg-[#EFD09E]/5 rounded-xl border border-[#D4AA7D]/30">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                          formData.is_active ? "bg-green-500" : "bg-[#EFD09E]/20"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                            formData.is_active ? "translate-x-7" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                      <div>
+                        <p className="text-[#EFD09E] font-medium">
+                          {formData.is_active ? "Active" : "Inactive"}
+                        </p>
+                        <p className="text-xs text-[#EFD09E]/60">
+                          {formData.is_active ? "Employee can receive bookings" : "Employee unavailable for bookings"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}

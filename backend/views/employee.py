@@ -3,13 +3,15 @@ from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.constants import DAY_MAP, DAY_NAME_TO_NUM
 from datetime import time, datetime
-# from decorator import admin_required
+from decorator import admin_required
 
 
 employee_bp = Blueprint("employee_bp", __name__)
 
 # Added Employee
 @employee_bp.route("/employee", methods=["POST"])
+@jwt_required()
+@admin_required
 def add_employee():
     data = request.json
     username = data.get("username")
@@ -124,6 +126,7 @@ def add_employee():
 # Fetch Employee
 @employee_bp.route("/employee-profile", methods=["GET"])
 @jwt_required()
+@admin_required
 def get_my_employee_profile():
     user_id = get_jwt_identity()
 
@@ -156,6 +159,8 @@ def get_my_employee_profile():
 
 # Update Employee
 @employee_bp.route("/employees/<int:employee_id>", methods=["PUT"])
+@jwt_required()
+@admin_required
 def update_employee(employee_id):
     data = request.json
     employee = Employee.query.get(employee_id)
@@ -211,18 +216,25 @@ def update_employee(employee_id):
     if other_skills_list is not None:  # allow clearing other skills
         employee.other_skills = ",".join(other_skills_list) if other_skills_list else None
 
-    # Update active/override
+    # Update active status
     if "is_active" in data:
-        employee._is_active = data["is_active"]
+        employee.is_active = bool(data["is_active"])
+        employee.override_active = None  # optional but recommended
 
     if "override_active" in data:
-        employee.override_active = data["override_active"]
-    
+        employee.override_active = (
+            bool(data["override_active"])
+            if data["override_active"] is not None
+            else None
+        )
+
+    # Update profile picture
     if "employee_profile_picture" in data:
         new_picture = data["employee_profile_picture"]
         employee.employee_profile_picture = new_picture
         employee.user.profile_picture = new_picture
-        db.session.commit()
+
+    db.session.commit()
 
     # Prepare response
     employee_data = {
@@ -242,6 +254,8 @@ def update_employee(employee_id):
 
 # Delete 
 @employee_bp.route("/employees/<int:employee_id>", methods=["DELETE"])
+@jwt_required()
+@admin_required
 def delete_employee(employee_id):
     employee = Employee.query.get(employee_id)
     if not employee:
@@ -270,6 +284,8 @@ def delete_employee(employee_id):
 
 # All Employees
 @employee_bp.route("/employees", methods=["GET"])
+@jwt_required()
+@admin_required
 def list_employees():
     employees = Employee.query.all()
     employees_data = []
