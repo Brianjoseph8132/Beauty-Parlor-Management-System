@@ -133,18 +133,24 @@ const EmployeeManagement = () => {
     setProfilePicturePreview(employee.employee_profile_picture);
   };
 
-  const handleUpdateEmployee = () => {
-    // setEmployees(
-    //   employees.map((employee) =>
-    //     employee.id === selectedEmployee.id
-    //       ? { ...employee, ...formData }
-    //       : employee
-    //   )
-    // );
+  const handleUpdateEmployee = async () => {
+    await updateEmployee(
+      formData.full_name,
+      formData.workingHours.work_start,
+      formData.workingHours.work_end,
+      editProfileImageFile,
+      formData.work_days,
+      formData.skills,
+      formData.other_skills,
+      selectedEmployee.id,
+      selectedEmployee.is_active
+    );
+
     setIsEditModalOpen(false);
     setSelectedEmployee(null);
     resetForm();
   };
+
 
   const handleDeleteClick = (employee) => {
     setSelectedEmployee(employee);
