@@ -215,44 +215,31 @@ export const EmployeeProvider = ({children}) => {
 
 
 
-    const fetchMyEmployeeProfile = async () => {
-        if (!authToken) return;
-
-        const toastId = toast.loading("Fetching employee profile...");
-
+  
+    // Get my employee profile (for beauticians)
+    const getMyEmployeeProfile = async () => {
         try {
             const res = await fetch("http://127.0.0.1:5000/employee-profile", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${authToken}`,
-            },
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`,
+                },
             });
 
-            const data = await res.json();
+            const response = await res.json();
 
-            if (!res.ok) {
-            throw new Error(data.error || "Failed to fetch employee profile");
+            if (response.employee) {
+                return response.employee;
+            } else if (response.error) {
+                toast.error(response.error);
+                return null;
             }
-
-            setEmployee(data.employee);
-
-            toast.update(toastId, {
-                render: "Employee profile loaded",
-                type: "success",
-                isLoading: false,
-                autoClose: 2000,
-            });
-        } catch (err) {
-            console.error("Fetch Employee Error:", err);
-
-            toast.update(toastId, {
-                render: err.message || "Failed to fetch employee profile",
-                type: "error",
-                isLoading: false,
-                autoClose: 3000,
-            });
-        } 
+        } catch (error) {
+            toast.error("Error fetching employee profile");
+            console.error("Get Employee Profile Error:", error);
+            return null;
+        }
     };
 
 
@@ -354,15 +341,7 @@ export const EmployeeProvider = ({children}) => {
     };
     
    
-    
-     
-
-
-
-
-
-
-    // ========Delete===========
+    // Delete
     const deleteEmployee = (employee_id) => {
         const toastId = toast.loading("Deleting employee...");
         
@@ -408,7 +387,8 @@ export const EmployeeProvider = ({children}) => {
         employees,
         deleteEmployee,
         addEmployee,
-        updateEmployee
+        updateEmployee,
+        getMyEmployeeProfile
        
     }
 

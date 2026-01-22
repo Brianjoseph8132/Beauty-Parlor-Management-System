@@ -9,3 +9,4 @@ from .employee import *
 from .receipt import *
 from .reminder import *
 from .allergy  import *
+from .attendance import *

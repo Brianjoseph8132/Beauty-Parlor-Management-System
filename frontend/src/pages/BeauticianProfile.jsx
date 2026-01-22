@@ -6,7 +6,7 @@ import { EmployeeContext } from "../context/EmployeeContext";
 
 const BeauticianProfile = () => {
   
-  const { employee } = useContext(EmployeeContext);
+  const { getMyEmployeeProfile } = useContext(EmployeeContext);
 
   
 

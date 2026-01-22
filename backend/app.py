@@ -61,6 +61,7 @@ app.register_blueprint(employee_bp)
 app.register_blueprint(receipt_bp)
 app.register_blueprint(reminder_bp)
 app.register_blueprint(allergy_bp)
+app.register_blueprint(attendance_bp)
 
 from views.reminder import start_scheduler
 

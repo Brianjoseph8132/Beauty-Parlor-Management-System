@@ -126,7 +126,6 @@ def add_employee():
 # Fetch Employee
 @employee_bp.route("/employee-profile", methods=["GET"])
 @jwt_required()
-@admin_required
 def get_my_employee_profile():
     user_id = get_jwt_identity()
 
