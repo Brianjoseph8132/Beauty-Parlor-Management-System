@@ -5,7 +5,7 @@ import { EmployeeContext } from "../context/EmployeeContext";
 import { ServiceContext } from "../context/ServiceContext";
 
 const EmployeeManagement = () => {
-  const {employees, deleteEmployee,addEmployee} = useContext(EmployeeContext);
+  const {employees, deleteEmployee,addEmployee,updateEmployee} = useContext(EmployeeContext);
   const {services} = useContext(ServiceContext);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
