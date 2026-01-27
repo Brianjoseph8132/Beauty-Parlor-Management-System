@@ -83,6 +83,17 @@ const Navbar = () => {
             Home
           </Link>
           <Link
+            to="/appointments"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/appointments")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Appoinments
+          </Link>
+          <Link
             to="/beauticianprofile"
             className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
             ${

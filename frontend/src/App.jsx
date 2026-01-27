@@ -23,6 +23,7 @@ import ServiceManagement from './pages/ServiceManagement'
 import BeauticianProfile from './pages/BeauticianProfile'
 import EmployeeManagement from './pages/EmployeeManagement'
 import EmployeeProfile from './pages/EmployeeProfile'
+import Appointments from './pages/Appointments'
 
 function App() {
   
@@ -56,6 +57,7 @@ function App() {
                 <Route path='/beauticianprofile' element={<BeauticianProfile/>}/>
                 <Route path='/employee-management' element={<EmployeeManagement/>}/>
                 <Route path='/employee-profile/:id' element={<EmployeeProfile/>}/>
+                <Route path='/appointments' element={<Appointments/>}/>
                 </Route>
               </Route>
             </Routes>

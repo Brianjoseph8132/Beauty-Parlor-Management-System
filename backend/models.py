@@ -188,17 +188,17 @@ class Attendance(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey("employees.id", ondelete="CASCADE"),nullable=False)
-    date = db.Column(db.Date, default=date.today, nullable=False)
+    date = db.Column(db.Date, default=lambda: date.today(), nullable=False)
     check_in = db.Column(db.DateTime, nullable=True)
     check_out = db.Column(db.DateTime, nullable=True)
+    worked_hours = db.Column(db.Float, default=0.0)
+
 
     status = db.Column(
         db.Enum(
             "Present",
             "Absent",
             "Late",
-            "Half-Day",
-            "On Leave",
             name="attendance_status"
         ),
         default="Present",

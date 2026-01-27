@@ -2,6 +2,7 @@ from datetime import time
 
 SALON_OPEN = time(8, 0)
 SALON_CLOSE = time(22, 0)
+GRACE_PERIOD_END = time(8, 30)
 BUFFER_MINUTES = 10 
 RESCHEDULE_HOURS_BEFORE = 24 
 

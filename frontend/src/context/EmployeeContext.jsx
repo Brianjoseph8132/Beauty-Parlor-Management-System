@@ -14,6 +14,7 @@ export const EmployeeProvider = ({children}) => {
     const [allergies, setAllergies] = useState([]);
     const [upcomingAppointments, setUpcomingAppointments] = useState([]);
     const [employees, setEmployees] = useState([]);
+    const [appointments, setAppointments] = useState([]);
 
     const [onChange, setOnChange] = useState(true);
 
@@ -402,6 +403,32 @@ export const EmployeeProvider = ({children}) => {
             });
     };
 
+    // =========Appointments============
+   useEffect(() => {
+    if (!authToken) return;
+
+    fetch("http://127.0.0.1:5000/beautician/bookings", {
+        method: "GET",
+        headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+        },
+    })
+    .then((res) => {
+        if (!res.ok) {
+            throw new Error("Failed to fetch bookings");
+        }
+        return res.json();
+        })
+        .then((data) => {
+            //  data IS the array
+            setAppointments(data);
+        })
+        .catch((error) =>
+            console.error("Error fetching appointments:", error)
+        );
+    }, [authToken, onChange]);
+
 
 
     const data = {
@@ -416,7 +443,8 @@ export const EmployeeProvider = ({children}) => {
         addEmployee,
         updateEmployee,
         getMyEmployeeProfile,
-        MyEmployeeProfile
+        MyEmployeeProfile,
+        appointments
        
     }
 
