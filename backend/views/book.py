@@ -823,16 +823,15 @@ def get_booking_details(booking_id):
 # Fetch all Bookings
 @booking_bp.route("/beautician/bookings", methods=["GET"])
 @jwt_required()
-@beautician_required
 def get_beautician_bookings():
     current_user_id = get_jwt_identity()
-
-    # Fetch logged-in user
     user = User.query.get_or_404(current_user_id)
 
-    # Ensure user is a beautician
-    if not user.is_beautician or not user.employee:
-        return jsonify({"error": "Access denied"}), 403
+    # Ensure user is a beautician and has an employee record
+    if not user.is_beautician:
+        return jsonify({"error": "You are not a beautician"}), 403
+    # if not user.employee:
+    #     return jsonify({"error": "No employee record found"}), 403
 
     employee_id = user.employee.id
 
@@ -851,8 +850,6 @@ def get_beautician_bookings():
 
     for booking in bookings:
         response.append({
-
-            # ---------- Booking ----------
             "booking": {
                 "id": booking.id,
                 "date": booking.booking_date.isoformat(),
@@ -861,25 +858,18 @@ def get_beautician_bookings():
                 "status": booking.status,
                 "price": float(booking.price),
             },
-
-            # ---------- Service ----------
             "service": {
                 "id": booking.service.id,
                 "title": booking.service.title,
                 "duration_minutes": booking.service.duration_minutes,
                 "price": float(booking.service.price)
             },
-
-            # ---------- Client ----------
             "client": {
                 "id": booking.user.id,
                 "username": booking.user.username,
                 "profile_picture": booking.user.profile_picture,
                 "allergies": [
-                    {
-                        "id": allergy.id,
-                        "name": allergy.name
-                    }
+                    {"id": allergy.id, "name": allergy.name}
                     for allergy in booking.user.allergies
                 ]
             }

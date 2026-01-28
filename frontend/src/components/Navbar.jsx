@@ -116,6 +116,54 @@ const Navbar = () => {
         </>
       )
     }
+    else if (current_user?.is_receptionist) {
+      return(
+        <>
+          <Link
+            to="/"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300
+            ${
+              isActive("/")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            to="/employee-attendance"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/employee-attendance")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Attendance
+          </Link>
+          {/* <Link
+            to="/beauticianprofile"
+            className={`relative px-4 py-2 rounded-md font-medium transition-all duration-300 
+            ${
+              isActive("/beauticianprofile")
+                ? "bg-[#D4AA7D]/20 text-[#D4AA7D] shadow-sm"
+                : "text-[#EFD09E] hover:text-[#D4AA7D] hover:bg-[#D4AA7D]/10"
+            }`}
+          >
+            Profile
+          </Link> */}
+          <motion.button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 rounded-md font-medium bg-[#D4AA7D] text-[#272727] hover:bg-[#EFD09E] transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </motion.button>
+        </>
+      )
+    }
      else if (current_user) {
       // Regular logged-in user navigation
       return (

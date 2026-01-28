@@ -297,3 +297,56 @@ def weekly_attendance_report(employee_id):
             "total_worked_hours": total_hours
         }
     }), 200
+
+
+
+
+@attendance_bp.route("/attendance", methods=["GET"])
+@jwt_required()
+def get_attendance_records():
+    user = User.query.get(get_jwt_identity())
+
+    # Check if user is admin OR receptionist
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+        
+    # Optional filters
+    employee_id = request.args.get("employee_id", type=int)
+    from_date_str = request.args.get("from_date")
+    to_date_str = request.args.get("to_date")
+
+    # Parse dates
+    try:
+        from_date = datetime.strptime(from_date_str, "%Y-%m-%d").date() if from_date_str else date.today()
+        to_date = datetime.strptime(to_date_str, "%Y-%m-%d").date() if to_date_str else date.today()
+    except ValueError:
+        return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
+
+    # Base query
+    query = Attendance.query.join(Employee)
+
+    if employee_id:
+        query = query.filter(Attendance.employee_id == employee_id)
+
+    query = query.filter(Attendance.date.between(from_date, to_date)).order_by(Attendance.date.asc())
+
+    records = query.all()
+
+    data = []
+    for rec in records:
+        data.append({
+            "employee_id": rec.employee_id,
+            "employee_name": rec.employee.full_name,
+            "date": rec.date.isoformat(),
+            "check_in": rec.check_in.isoformat() if rec.check_in else None,
+            "check_out": rec.check_out.isoformat() if rec.check_out else None,
+            "status": rec.status,
+            "worked_hours": rec.worked_hours or 0
+        })
+
+    return jsonify({
+        "from_date": from_date.isoformat(),
+        "to_date": to_date.isoformat(),
+        "total_records": len(data),
+        "attendance": data
+    }), 200

@@ -142,7 +142,7 @@ export const ServiceProvider = ({ children }) => {
         })
         .then((res) => res.json())
         .then((response) => {
-            console.log("SERVICES:", response)
+            // console.log("SERVICES:", response)
             setServices(response);
         })
         .catch((error) =>

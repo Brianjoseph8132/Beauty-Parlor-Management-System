@@ -15,6 +15,7 @@ export const EmployeeProvider = ({children}) => {
     const [upcomingAppointments, setUpcomingAppointments] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [appointments, setAppointments] = useState([]);
+    const [attendance, setAttendance] = useState([])
 
     const [onChange, setOnChange] = useState(true);
 
@@ -429,6 +430,26 @@ export const EmployeeProvider = ({children}) => {
         );
     }, [authToken, onChange]);
 
+
+    //  =============Attendance===============
+    useEffect(() => {
+        if (!authToken) return;
+
+        fetch("http://127.0.0.1:5000/attendance", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+            },
+        })
+        .then((res) => res.json())
+        .then((response) => {
+            setAttendance(response.attendance || []);
+        })
+        .catch((error) =>
+            console.error("Error fetching Attendance:", error)
+        );
+    }, [authToken, onChange]);
 
 
     // Start Appointment

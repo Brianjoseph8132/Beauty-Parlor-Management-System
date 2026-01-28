@@ -3,7 +3,7 @@ from flask import jsonify,request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.constants import DAY_MAP, DAY_NAME_TO_NUM
 from datetime import time, datetime
-from decorator import admin_required,beautician_required
+from decorator import admin_required,beautician_required, receptionist_required
 
 
 employee_bp = Blueprint("employee_bp", __name__)
@@ -282,8 +282,13 @@ def delete_employee(employee_id):
 # All Employees
 @employee_bp.route("/employees", methods=["GET"])
 @jwt_required()
-@admin_required
 def list_employees():
+    user = User.query.get(get_jwt_identity())
+
+    # Check if user is admin OR receptionist
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+
     employees = Employee.query.all()
     employees_data = []
 
@@ -303,8 +308,6 @@ def list_employees():
         })
 
     return jsonify({"employees": employees_data}), 200
-
-
 
 
 # Fetch employee id 
