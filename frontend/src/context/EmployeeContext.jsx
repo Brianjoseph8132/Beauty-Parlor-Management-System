@@ -431,6 +431,117 @@ export const EmployeeProvider = ({children}) => {
 
 
 
+    // Start Appointment
+    const startService = async (bookingId) => {
+        const toastId = toast.loading("Starting service...");
+
+        try {
+            const res = await fetch(
+            `http://127.0.0.1:5000/bookings/start/${bookingId}`,
+            {
+                method: "PATCH",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+                },
+            }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+            throw new Error(data.error || "Failed to start service");
+            }
+
+            // Update booking status locally
+            setAppointments((prev) =>
+                prev.map((appointment) =>
+                    appointment.booking.id === bookingId
+                    ? {
+                        ...appointment,
+                        booking: {
+                            ...appointment.booking,
+                            status: "in_progress",
+                            started_at: data.started_at,
+                        },
+                        }
+                    : appointment
+                )
+            );
+
+
+            toast.success("Service started successfully 🚀", {
+            id: toastId,
+            });
+
+            return data;
+        } catch (err) {
+            toast.error(err.message || "Failed to start service", {
+            id: toastId,
+            });
+            console.error("Error starting service:", err);
+            throw err;
+        }
+    };
+
+
+    // Complete
+    const completeService = async (bookingId) => {
+        const toastId = toast.loading("Completing service...");
+
+        try {
+            const res = await fetch(
+            `http://127.0.0.1:5000/bookings/complete/${bookingId}`,
+            {
+                method: "PATCH",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+                },
+            }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+            throw new Error(data.error || "Failed to complete service");
+            }
+
+            setAppointments((prev) =>
+            prev.map((appointment) =>
+                appointment.booking.id === bookingId
+                ? {
+                    ...appointment,
+                    booking: {
+                        ...appointment.booking,
+                        status: "completed",
+                        completed_at: data.completed_at,
+                        receipt_sent: data.receipt_sent, 
+                    },
+                    }
+                : appointment
+            )
+            );
+
+            toast.success(
+            data.receipt_sent
+                ? "Service completed & receipt sent"
+                : "Service completed (receipt not sent)",
+            { id: toastId }
+            );
+
+            return data;
+        } catch (err) {
+            toast.error(err.message || "Failed to complete service", {
+            id: toastId,
+            });
+            throw err;
+        }
+    };
+
+
+
+
     const data = {
         allergies,
         deleteallergy,
@@ -444,7 +555,9 @@ export const EmployeeProvider = ({children}) => {
         updateEmployee,
         getMyEmployeeProfile,
         MyEmployeeProfile,
-        appointments
+        appointments,
+        startService,
+        completeService
        
     }
 

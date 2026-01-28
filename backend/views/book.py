@@ -588,6 +588,7 @@ We look forward to serving you again.
 # Started
 @booking_bp.route("/bookings/start/<int:booking_id>", methods=["PATCH"])
 @jwt_required()
+@ beautician_required
 def start_service(booking_id):
     current_user_id = get_jwt_identity()  # Logged-in user's ID
 
@@ -602,10 +603,10 @@ def start_service(booking_id):
         return jsonify({"error": "You are not authorized to start this booking"}), 403
 
     # Check if the appointment time has arrived (prevent starting too early)
-    # now = datetime.now()
-    # appointment_start = datetime.combine(booking.booking_date, booking.start_time)
-    # if now < appointment_start - timedelta(minutes=15):  # e.g., allow 15 min early
-    #     return jsonify({"error": "Cannot start service too early"}), 400
+    now = datetime.now()
+    appointment_start = datetime.combine(booking.booking_date, booking.start_time)
+    if now < appointment_start - timedelta(minutes=15):  # e.g., allow 15 min early
+        return jsonify({"error": "Cannot start service too early"}), 400
 
     # Update status
     booking.status = "in_progress"

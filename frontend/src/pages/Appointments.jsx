@@ -1,87 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useContext, useState } from "react";
-import { Calendar, Clock, DollarSign, User, AlertTriangle, Search, Filter, Play, CheckCircle } from "lucide-react";
+import { Calendar, Clock, DollarSign, User, AlertTriangle, Search, Filter, Play, CheckCircle, MailCheck, MailX } from "lucide-react";
 import { EmployeeContext } from "../context/EmployeeContext";
 
 const Appointments = () => {
-  // Sample appointments data matching your API response
-  const {appointments} = useContext(EmployeeContext);
-//   const [appointments, setAppointments] = useState([
-//     {
-//       booking: {
-//         id: 1,
-//         date: "2025-12-31",
-//         start_time: "14:00",
-//         end_time: "15:10",
-//         price: 65.0,
-//         status: "confirmed"
-//       },
-//       client: {
-//         id: 3,
-//         username: "john_doe",
-//         profile_picture: "",
-//         allergies: [
-//           { id: 1, name: "Coconut Oil" },
-//           { id: 2, name: "Castor Oil" },
-//           { id: 3, name: "Hair Relaxer" }
-//         ]
-//       },
-//       service: {
-//         id: 11,
-//         title: "Essential Oils Therapy",
-//         duration_minutes: 60,
-//         price: 65.0
-//       }
-//     },
-//     {
-//       booking: {
-//         id: 2,
-//         date: "2026-01-02",
-//         start_time: "10:00",
-//         end_time: "11:30",
-//         price: 280.0,
-//         status: "confirmed"
-//       },
-//       client: {
-//         id: 5,
-//         username: "sarah_smith",
-//         profile_picture: "",
-//         allergies: [
-//           { id: 4, name: "Latex" },
-//           { id: 5, name: "Fragrance" }
-//         ]
-//       },
-//       service: {
-//         id: 1,
-//         title: "Gelish Overlay (Toes) French or Art",
-//         duration_minutes: 90,
-//         price: 280.0
-//       }
-//     },
-//     {
-//       booking: {
-//         id: 3,
-//         date: "2026-01-03",
-//         start_time: "09:00",
-//         end_time: "11:00",
-//         price: 650.0,
-//         status: "confirmed"
-//       },
-//       client: {
-//         id: 8,
-//         username: "emily_jones",
-//         profile_picture: "",
-//         allergies: []
-//       },
-//       service: {
-//         id: 2,
-//         title: "Bridal Makeup",
-//         duration_minutes: 120,
-//         price: 650.0
-//       }
-//     },
-//   ]);
-
+ 
+  const {appointments, startService, completeService} = useContext(EmployeeContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -135,31 +59,31 @@ const Appointments = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleStartAppointment = (bookingId) => {
-    setAppointments(
-      appointments.map((appointment) =>
-        appointment.booking.id === bookingId
-          ? {
-              ...appointment,
-              booking: { ...appointment.booking, status: "in_progress" }
-            }
-          : appointment
-      )
-    );
-  };
+  // const handleStartAppointment = (bookingId) => {
+  //   setAppointments(
+  //     appointments.map((appointment) =>
+  //       appointment.booking.id === bookingId
+  //         ? {
+  //             ...appointment,
+  //             booking: { ...appointment.booking, status: "in_progress" }
+  //           }
+  //         : appointment
+  //     )
+  //   );
+  // };
 
-  const handleCompleteAppointment = (bookingId) => {
-    setAppointments(
-      appointments.map((appointment) =>
-        appointment.booking.id === bookingId
-          ? {
-              ...appointment,
-              booking: { ...appointment.booking, status: "completed" }
-            }
-          : appointment
-      )
-    );
-  };
+  // const handleCompleteAppointment = (bookingId) => {
+  //   setAppointments(
+  //     appointments.map((appointment) =>
+  //       appointment.booking.id === bookingId
+  //         ? {
+  //             ...appointment,
+  //             booking: { ...appointment.booking, status: "completed" }
+  //           }
+  //         : appointment
+  //     )
+  //   );
+  // };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -356,7 +280,7 @@ const Appointments = () => {
                   <div className="lg:w-48 flex lg:flex-col gap-3">
                     {(appointment.booking.status === "confirmed" || appointment.booking.status === "rescheduled") && !isPastBooking(appointment.booking) && (
                       <motion.button
-                          onClick={() => handleStartAppointment(appointment.booking.id)}
+                          onClick={() => startService(appointment.booking.id)}
                           className="flex-1 flex items-center justify-center gap-2 bg-[#D4AA7D] text-[#272727] px-4 py-3 rounded-xl font-semibold hover:bg-[#272727] hover:text-[#EFD09E] transition"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
@@ -370,7 +294,7 @@ const Appointments = () => {
 
                     {appointment.booking.status === "in_progress" && (
                       <motion.button
-                        onClick={() => handleCompleteAppointment(appointment.booking.id)}
+                        onClick={() => completeService(appointment.booking.id)}
                         className="flex-1 flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-3 rounded-xl font-semibold hover:bg-green-600 transition"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -381,11 +305,22 @@ const Appointments = () => {
                     )}
 
                     {appointment.booking.status === "completed" && (
-                      <div className="flex-1 flex items-center justify-center gap-2 bg-green-500/20 text-green-600 px-4 py-3 rounded-xl font-semibold border border-green-500/30">
-                        <CheckCircle className="w-4 h-4" />
-                        Completed
-                      </div>
+                      <span
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ${
+                          appointment.booking.receipt_sent
+                            ? "bg-green-500/20 text-green-600 border-green-500/30"
+                            : "bg-red-500/20 text-red-600 border-red-500/30"
+                        }`}
+                      >
+                        {appointment.booking.receipt_sent ? (
+                          <MailCheck className="w-4 h-4" />
+                        ) : (
+                          <MailX className="w-4 h-4" />
+                        )}
+                        {appointment.booking.receipt_sent ? "Receipt Sent" : "Receipt Failed"}
+                      </span>
                     )}
+
                   </div>
                 </div>
               </motion.div>
