@@ -1,12 +1,14 @@
-from models import db, Employee, Attendance
+from models import db, Employee, Attendance, User
 from flask import jsonify, request, Blueprint
 from flask_jwt_extended import jwt_required
-from utils.constants import SALON_OPEN, GRACE_PERIOD_END
+from utils.constants import SALON_OPEN, GRACE_PERIOD_END, SALON_CLOSE
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, date
 from decorator import receptionist_required, admin_required
 from datetime import timedelta
 import calendar
 from sqlalchemy import func, case
+from backports.zoneinfo import ZoneInfo
 
 attendance_bp = Blueprint("attendance_bp", __name__)
 
@@ -27,11 +29,17 @@ def calculate_worked_hours(check_in, check_out):
     hours = duration.total_seconds() / 3600
     return round(hours, 2)
 
+NAIROBI_TZ = ZoneInfo("Africa/Nairobi")
 
 @attendance_bp.route("/attendance/check-in/<int:employee_id>", methods=["POST"])
 @jwt_required()
-@receptionist_required
 def check_in(employee_id):
+    user = User.query.get(get_jwt_identity())
+
+    # Check if user is admin OR receptionist
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+    
     employee = Employee.query.get(employee_id)
     if not employee:
         return jsonify({"error": "Employee not found"}), 404
@@ -41,7 +49,7 @@ def check_in(employee_id):
             "error": "Employee is currently inactive"
         }), 400
 
-    today = date.today()
+    today = datetime.now(NAIROBI_TZ).date()
 
     # Not scheduled to work
     if not is_employee_working_today(employee, today):
@@ -49,10 +57,11 @@ def check_in(employee_id):
             "error": "Employee is not scheduled to work today"
         }), 400
 
-    now = datetime.utcnow()
+    now_na = datetime.now(NAIROBI_TZ)  # current Nairobi time
+    now_time = now_na.time()  # for comparison
 
     # Salon closed
-    if now.time() < SALON_OPEN:
+    if now_time() < SALON_OPEN:
         return jsonify({
             "error": "Salon opens at 8:00 AM"
         }), 400
@@ -72,12 +81,12 @@ def check_in(employee_id):
         )
         db.session.add(attendance)
 
-    attendance.check_in = now
+    attendance.check_in = now_na.astimezone(ZoneInfo("UTC"))
 
     # Grace period logic (FINAL)
     attendance.status = (
         "Present"
-        if now.time() <= GRACE_PERIOD_END
+        if now_time <= GRACE_PERIOD_END
         else "Late"
     )
 
@@ -95,8 +104,13 @@ def check_in(employee_id):
 
 @attendance_bp.route("/attendance/check-out/<int:employee_id>", methods=["POST"])
 @jwt_required()
-@receptionist_required
 def check_out(employee_id):
+    user = User.query.get(get_jwt_identity())
+
+    # Check if user is admin OR receptionist
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+
     employee = Employee.query.get(employee_id)
     if not employee:
         return jsonify({"error": "Employee not found"}), 404
@@ -104,7 +118,7 @@ def check_out(employee_id):
     if not employee.is_active:
         return jsonify({"error": "Employee is currently inactive"}), 400
 
-    today = date.today()
+    today = datetime.now(NAIROBI_TZ).date()
 
     if not is_employee_working_today(employee, today):
         return jsonify({"error": "Employee is not scheduled to work today"}), 400
@@ -120,16 +134,19 @@ def check_out(employee_id):
     if attendance.check_out:
         return jsonify({"error": "Employee already checked out"}), 400
 
-    now = datetime.utcnow()
+    now_na = datetime.now(NAIROBI_TZ)
+    now_time = now_na.time()
 
     # Auto-close at salon closing time
-    if now.time() > SALON_CLOSE:
-        now = datetime.combine(today, SALON_CLOSE)
+    if now_time > SALON_CLOSE:
+        now_na = datetime.combine(today, SALON_CLOSE, tzinfo=NAIROBI_TZ)
 
-    attendance.check_out = now
+    attendance.check_out = now_na.astimezone(ZoneInfo("UTC"))
+
+    # Calculate worked hours (convert back to Nairobi time for calculation)
     attendance.worked_hours = calculate_worked_hours(
-        attendance.check_in,
-        attendance.check_out
+        attendance.check_in.astimezone(NAIROBI_TZ),
+        attendance.check_out.astimezone(NAIROBI_TZ)
     )
 
     db.session.commit()
@@ -144,26 +161,27 @@ def check_out(employee_id):
 
 @attendance_bp.route("/attendance/absent/<int:employee_id>", methods=["POST"])
 @jwt_required()
-@receptionist_required
 def mark_absent(employee_id):
+    user = User.query.get(get_jwt_identity())
+
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+
     employee = Employee.query.get(employee_id)
     if not employee:
         return jsonify({"error": "Employee not found"}), 404
 
     if not employee.is_active:
-        return jsonify({
-            "error": "Employee is currently inactive"
-        }), 400
+        return jsonify({"error": "Employee is currently inactive"}), 400
 
-    today = date.today()
+    today = datetime.now(NAIROBI_TZ).date()
 
     if not is_employee_working_today(employee, today):
-        return jsonify({
-            "error": "Employee is not scheduled to work today"
-        }), 400
+        return jsonify({"error": "Employee is not scheduled to work today"}), 400
 
-    now = datetime.utcnow().time()
-    if now < SALON_CLOSE:
+    now_na = datetime.now(NAIROBI_TZ).time()
+
+    if now_na < SALON_CLOSE:
         return jsonify({
             "error": "Employee can only be marked absent after salon closing time"
         }), 400
@@ -174,23 +192,26 @@ def mark_absent(employee_id):
     ).first()
 
     if attendance:
-        if attendance.check_in:
+        if attendance.check_in or attendance.check_out:
             return jsonify({
-                "error": "Employee already checked in, cannot mark absent"
+                "error": "Employee has already checked in or out, cannot mark absent"
             }), 400
-        return jsonify({"error": "Attendance already exists"}), 400
+        if attendance.status == "Absent":
+            return jsonify({"error": "Employee is already marked absent"}), 400
 
-    attendance = Attendance(
-        employee_id=employee_id,
-        date=today,
-        status="Absent"
-    )
+    if not attendance:
+        attendance = Attendance(
+            employee_id=employee_id,
+            date=today,
+            status="Absent"
+        )
+        db.session.add(attendance)
+    else:
+        attendance.status = "Absent"
 
-    db.session.add(attendance)
     db.session.commit()
 
     return jsonify({"message": "Employee marked absent"}), 200
-
 
 
 
@@ -350,3 +371,181 @@ def get_attendance_records():
         "total_records": len(data),
         "attendance": data
     }), 200
+
+
+
+@attendance_bp.route("/attendance/today-summary", methods=["GET"])
+@jwt_required()
+def attendance_today_summary():
+    user = User.query.get(get_jwt_identity())
+
+    # Check if user is admin OR receptionist
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+
+    today = date.today()
+    now = datetime.now().time()
+
+    # 1. Active employees
+    employees = Employee.query.filter(Employee._is_active.is_(True)).all()
+
+    # 2. Scheduled today
+    scheduled_today = [
+        e for e in employees if is_employee_working_today(e, today)
+    ]
+    scheduled_ids = {e.id for e in scheduled_today}
+
+    # 3. Attendance records today
+    attendance_records = Attendance.query.filter_by(date=today).all()
+
+    checked_in_ids = {
+        a.employee_id for a in attendance_records if a.check_in
+    }
+
+    present_today = len(checked_in_ids)
+
+    pending_check_in = 0
+    absent_today = 0
+
+    # 4. Split pending vs absent using work_end
+    for employee in scheduled_today:
+        if employee.id not in checked_in_ids:
+            if now < employee.work_end:
+                pending_check_in += 1
+            else:
+                absent_today += 1
+
+    return jsonify({
+        "date": today.isoformat(),
+        "scheduled_today": len(scheduled_ids),
+        "present_today": present_today,
+        "pending_check_in": pending_check_in,
+        "absent_today": absent_today
+    }), 200
+
+
+
+
+
+# Scheduled today
+@attendance_bp.route("/attendance/scheduled-today", methods=["GET"])
+@jwt_required()
+def get_scheduled_employees_today():
+    user = User.query.get(get_jwt_identity())
+
+    # Admin or receptionist only
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+
+    today = date.today()
+    weekday = today.weekday()  # 0 = Monday
+
+    # 1. Get active employees only
+    employees = Employee.query.filter(Employee._is_active.is_(True)).all()
+
+    # 2. Filter employees scheduled today
+    scheduled_today = []
+    for employee in employees:
+        work_days = [int(d) for d in employee.work_days.split(",")]
+        if weekday in work_days:
+            scheduled_today.append(employee)
+
+    # 3. Serialize response
+    data = []
+    for employee in scheduled_today:
+        data.append({
+            "id": employee.id,
+            "user_id": employee.user_id,
+            "username": employee.user.username,
+            "full_name": employee.full_name,
+            "employee_profile_picture": employee.employee_profile_picture,
+            "is_active": employee.is_active,  # hybrid property
+            "work_start": employee.work_start.strftime("%H:%M"),
+            "work_end": employee.work_end.strftime("%H:%M"),
+        })
+
+    return jsonify({
+        "date": today.isoformat(),
+        "total_scheduled": len(data),
+        "employees": data
+    }), 200
+
+
+
+
+@attendance_bp.route("/attendance/today-records", methods=["GET"])
+@jwt_required()
+def get_today_attendance_records():
+    user = User.query.get(get_jwt_identity())
+
+    if not (user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
+
+    # Use LOCAL time (Kenya)
+    tz = ZoneInfo("Africa/Nairobi")
+    today = date.today()
+    now = datetime.now(tz=tz).time()
+
+    # 1. Get active employees
+    employees = Employee.query.filter(Employee._is_active.is_(True)).all()
+
+    # 2. Employees scheduled today
+    scheduled_today = [
+        e for e in employees if is_employee_working_today(e, today)
+    ]
+
+    # 3. Fetch today's attendance records once
+    attendance_records = {
+        a.employee_id: a
+        for a in Attendance.query.filter_by(date=today).all()
+    }
+
+    data = {}
+
+    for employee in scheduled_today:
+        record = attendance_records.get(employee.id)
+
+        # ---- UI STATUS DETERMINATION ----
+        if record:
+            if record.check_out:
+                ui_status = "checked_out"
+            elif record.check_in:
+                ui_status = "checked_in"
+            else:
+                ui_status = "pending"
+        else:
+            # If no record exists and work hours are over → absent
+            ui_status = "absent" if now > employee.work_end else "pending"
+
+        data[str(employee.id)] = {
+            "employeeId": employee.id,
+            "employeeName": employee.full_name,
+            "username": employee.user.username,
+
+            # Times formatted for UI
+            "checkIn": (
+                record.check_in.astimezone(tz).strftime("%H:%M")
+                if record and record.check_in
+                else None
+            ),
+            "checkOut": (
+                record.check_out.astimezone(tz).strftime("%H:%M")
+                if record and record.check_out
+                else None
+            ),
+
+            # UI state (what buttons show)
+            "status": ui_status,
+
+            # Backend truth (Present / Late / Absent)
+            "backendStatus": record.status if record else None,
+
+            "workedHours": record.worked_hours if record else 0,
+            "date": today.isoformat(),
+        }
+
+    return jsonify(data), 200

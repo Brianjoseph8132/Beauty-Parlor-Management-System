@@ -1,14 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { User, Clock, LogIn, LogOut, UserX, Search, Filter,Calendar,TrendingUp,CheckCircle,XCircle,AlertCircle} from "lucide-react";
 import { EmployeeContext } from "../context/EmployeeContext";
 
 const EmployeeAttendance = () => {
-  const {employees} = useContext(EmployeeContext);
+  const {scheduledToday, checkInEmployee, checkOutEmployee, todaySummary, absentEmployee,fetchTodayAttendance, attendanceRecords } = useContext(EmployeeContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [attendanceRecords, setAttendanceRecords] = useState({});
   const employeesPerPage = 8;
 
   const statusOptions = ["All", "Active", "Inactive"];
@@ -21,63 +20,46 @@ const EmployeeAttendance = () => {
     day: "numeric",
   });
 
-  // Handle Check In
-  const handleCheckIn = (employeeId) => {
-    const currentTime = new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+  useEffect(() => {
+    fetchTodayAttendance();
+  }, []);
 
-    setAttendanceRecords({
-      ...attendanceRecords,
-      [employeeId]: {
-        ...attendanceRecords[employeeId],
-        checkIn: currentTime,
-        status: "checked_in",
-        date: new Date().toISOString().split("T")[0],
-      },
-    });
+  // Handle Check In
+  const handleCheckIn = async (employeeId) => {
+    try {
+      await checkInEmployee(employeeId);
+      fetchTodayAttendance();
+    } catch (e) {}
   };
+
 
   // Handle Check Out
-  const handleCheckOut = (employeeId) => {
-    const currentTime = new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    setAttendanceRecords({
-      ...attendanceRecords,
-      [employeeId]: {
-        ...attendanceRecords[employeeId],
-        checkOut: currentTime,
-        status: "checked_out",
-      },
-    });
+  const handleCheckOut = async (employeeId) => {
+    try {
+      await checkOutEmployee(employeeId);
+      fetchTodayAttendance();
+    } catch (e) {}
   };
+
+
 
   // Handle Mark Absent
-  const handleMarkAbsent = (employeeId) => {
-    setAttendanceRecords({
-      ...attendanceRecords,
-      [employeeId]: {
-        checkIn: null,
-        checkOut: null,
-        status: "absent",
-        date: new Date().toISOString().split("T")[0],
-      },
-    });
+  const handleMarkAbsent = async (employeeId) => {
+    try {
+      await absentEmployee(employeeId);
+      fetchTodayAttendance();
+    } catch (e) {}
   };
+
+
 
   // Get attendance status for employee
   const getAttendanceStatus = (employeeId) => {
-    return attendanceRecords[employeeId] || null;
+    return attendanceRecords?.[employeeId] || null;
   };
 
   // Filter employees
-    const filteredEmployees = (employees || []).filter((employee) => {
+    const filteredEmployees = (scheduledToday || []).filter((employee) => {
         const matchesStatus =
         statusFilter === "All" ||
         (statusFilter === "Active" && employee.is_active) ||
@@ -113,7 +95,7 @@ const EmployeeAttendance = () => {
   };
 
   // Calculate statistics
-  const totalEmployees = employees.filter((e) => e.is_active).length;
+  const totalEmployees = scheduledToday.filter((e) => e.is_active).length;
   const checkedIn = Object.values(attendanceRecords).filter(
     (record) => record.status === "checked_in" || record.status === "checked_out"
   ).length;
@@ -166,7 +148,7 @@ const EmployeeAttendance = () => {
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
             <h3 className="text-3xl font-bold text-[#272727] mb-1">
-              {totalEmployees}
+              {todaySummary.scheduled_today}
             </h3>
             <p className="text-sm text-[#272727]/60">Total Active Employees</p>
           </div>
@@ -179,7 +161,7 @@ const EmployeeAttendance = () => {
               </div>
             </div>
             <h3 className="text-3xl font-bold text-[#272727] mb-1">
-              {checkedIn}
+              {todaySummary.present_today}
             </h3>
             <p className="text-sm text-[#272727]/60">Present Today</p>
           </div>
@@ -191,7 +173,7 @@ const EmployeeAttendance = () => {
                 <XCircle className="w-6 h-6 text-red-500" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-[#272727] mb-1">{absent}</h3>
+            <h3 className="text-3xl font-bold text-[#272727] mb-1">{todaySummary.absent_today}</h3>
             <p className="text-sm text-[#272727]/60">Absent Today</p>
           </div>
 
@@ -202,7 +184,7 @@ const EmployeeAttendance = () => {
                 <AlertCircle className="w-6 h-6 text-yellow-500" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-[#272727] mb-1">{pending}</h3>
+            <h3 className="text-3xl font-bold text-[#272727] mb-1">{todaySummary.pending_check_in}</h3>
             <p className="text-sm text-[#272727]/60">Pending Check-in</p>
           </div>
         </motion.div>
@@ -322,7 +304,7 @@ const EmployeeAttendance = () => {
                     </div>
 
                     {/* Attendance Status Badge */}
-                    {attendance && (
+                    {attendance && attendance.status !== "pending" && (
                       <div
                         className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                           isCheckedIn || isCheckedOut
@@ -378,7 +360,7 @@ const EmployeeAttendance = () => {
 
                   {/* Action Buttons */}
                   <div className="flex gap-3">
-                    {!attendance?.status && (
+                    {attendance?.status === "pending" && (
                       <>
                         <motion.button
                           onClick={() => handleCheckIn(employee.id)}
@@ -392,7 +374,12 @@ const EmployeeAttendance = () => {
                         </motion.button>
                         <motion.button
                           onClick={() => handleMarkAbsent(employee.id)}
-                          disabled={!employee.is_active}
+                          disabled={
+                            !employee.is_active ||
+                            isCheckedIn ||
+                            isCheckedOut ||
+                            isAbsent
+                          }
                           className="flex-1 flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-3 rounded-xl font-semibold hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                           whileHover={{ scale: employee.is_active ? 1.02 : 1 }}
                           whileTap={{ scale: employee.is_active ? 0.98 : 1 }}

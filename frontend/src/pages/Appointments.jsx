@@ -5,7 +5,7 @@ import { EmployeeContext } from "../context/EmployeeContext";
 
 const Appointments = () => {
  
-  const {appointments, startService, completeService} = useContext(EmployeeContext);
+  const {employeeAppointments, startService, completeService} = useContext(EmployeeContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,7 +27,7 @@ const Appointments = () => {
 
 
   // Filter appointments
-  const filteredAppointments = appointments.filter((appointment) => {
+  const filteredAppointments = employeeAppointments.filter((appointment) => {
     const matchesStatus = statusFilter === "All" || 
       appointment.booking.status.toLowerCase() === statusFilter.toLowerCase().replace(" ", "_");
     const matchesSearch = 

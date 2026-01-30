@@ -14,8 +14,12 @@ export const EmployeeProvider = ({children}) => {
     const [allergies, setAllergies] = useState([]);
     const [upcomingAppointments, setUpcomingAppointments] = useState([]);
     const [employees, setEmployees] = useState([]);
-    const [appointments, setAppointments] = useState([]);
+    const [employeeAppointments, setEmployeeAppointmnets] = useState([]);
     const [attendance, setAttendance] = useState([])
+    const [todaySummary, setTodaySummary] = useState(null);
+    const [scheduledToday, setScheduledToday] = useState([]);
+    const [attendanceRecords, setAttendanceRecords] = useState({});
+
 
     const [onChange, setOnChange] = useState(true);
 
@@ -405,50 +409,33 @@ export const EmployeeProvider = ({children}) => {
     };
 
     // =========Appointments============
-   useEffect(() => {
-    if (!authToken) return;
-
-    fetch("http://127.0.0.1:5000/beautician/bookings", {
-        method: "GET",
-        headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-        },
-    })
-    .then((res) => {
-        if (!res.ok) {
-            throw new Error("Failed to fetch bookings");
-        }
-        return res.json();
-        })
-        .then((data) => {
-            //  data IS the array
-            setAppointments(data);
-        })
-        .catch((error) =>
-            console.error("Error fetching appointments:", error)
-        );
-    }, [authToken, onChange]);
-
-
-    //  =============Attendance===============
     useEffect(() => {
         if (!authToken) return;
 
-        fetch("http://127.0.0.1:5000/attendance", {
+        fetch("http://127.0.0.1:5000/beautician/bookings", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${authToken}`,
             },
         })
-        .then((res) => res.json())
-        .then((response) => {
-            setAttendance(response.attendance || []);
-        })
-        .catch((error) =>
-            console.error("Error fetching Attendance:", error)
-        );
+            .then(async (res) => {
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || "Failed to fetch bookings");
+                }
+
+                return data;
+            })
+            .then((data) => {
+                // data is an ARRAY
+                setEmployeeAppointmnets(Array.isArray(data) ? data : []);
+            })
+            .catch((error) => {
+                console.error("Error fetching appointments:", error);
+                setAppointments([]); // prevent stale UI
+            });
     }, [authToken, onChange]);
 
 
@@ -463,7 +450,7 @@ export const EmployeeProvider = ({children}) => {
                 method: "PATCH",
                 headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${authToken}`,
                 },
             }
             );
@@ -491,7 +478,7 @@ export const EmployeeProvider = ({children}) => {
             );
 
 
-            toast.success("Service started successfully 🚀", {
+            toast.success("Service started successfully", {
             id: toastId,
             });
 
@@ -517,7 +504,7 @@ export const EmployeeProvider = ({children}) => {
                 method: "PATCH",
                 headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${authToken}`,
                 },
             }
             );
@@ -561,6 +548,222 @@ export const EmployeeProvider = ({children}) => {
     };
 
 
+     //  =============Attendance===============
+    useEffect(() => {
+        if (!authToken) return;
+
+        fetch("http://127.0.0.1:5000/attendance", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+            },
+        })
+        .then((res) => res.json())
+        .then((response) => {
+            setAttendance(response.attendance || []);
+        })
+        .catch((error) =>
+            console.error("Error fetching Attendance:", error)
+        );
+    }, [authToken, onChange]);
+
+
+    // Check-in
+    const checkInEmployee = async (employeeId) => {
+        const toastId = toast.loading("Checking in...");
+
+        try {
+            const res = await fetch(
+            `http://127.0.0.1:5000/attendance/check-in/${employeeId}`,
+            {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+                },
+            }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+            toast.dismiss(toastId); 
+            throw new Error(data.error || "Check-in failed");
+            }
+
+            toast.dismiss(toastId); 
+            toast.success(data.message || "Check-in successful");
+            setOnChange(!onChange); 
+
+            return data;
+        } catch (err) {
+            toast.dismiss(toastId);
+            toast.error(err.message || "Something went wrong");
+            throw err;
+        }
+    };
+
+
+    // Check-out
+    const checkOutEmployee = async (employeeId) => {
+        const toastId = toast.loading("Checking out...");
+
+        try {
+            const res = await fetch(
+            `http://127.0.0.1:5000/attendance/check-out/${employeeId}`,
+            {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+                },
+            }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+            toast.dismiss(toastId); 
+            throw new Error(data.error || "Check-out failed");
+            }
+
+            toast.dismiss(toastId); 
+            toast.success(data.message || "Check-out successful");
+
+            setOnChange(!onChange); 
+
+            return data;
+        } catch (err) {
+            toast.dismiss(toastId); 
+            toast.error(err.message || "Something went wrong");
+            throw err;
+        }
+    };
+
+
+
+    // Absent 
+    const absentEmployee = async (employeeId) => {
+        const toastId = toast.loading("Marking employee absent...");
+
+        try {
+            const res = await fetch(
+            `http://127.0.0.1:5000/attendance/absent/${employeeId}`,
+            {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+                },
+            }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+            toast.dismiss(toastId);
+            throw new Error(data.error || "Failed to mark absent");
+            }
+
+            toast.dismiss(toastId);
+            toast.success(data.message || "Employee marked absent");
+
+            setOnChange(!onChange);
+
+            return data;
+        } catch (err) {
+            toast.dismiss(toastId);
+            toast.error(err.message || "Something went wrong");
+            throw err;
+        }
+    };
+
+
+    // Attendance summary
+    useEffect(() => {
+        if (!authToken) return;
+
+        fetch("http://127.0.0.1:5000/attendance/today-summary", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+            },
+        })
+        .then((res) => res.json())
+        .then((data) => {
+            setTodaySummary(data);
+        })
+        .catch((error) =>
+            console.error("Error fetching attendance summary:", error)
+        );
+    }, [authToken, onChange]);
+
+
+
+    // Employees scheduled today
+    useEffect(() => {
+        if (!authToken) return;
+
+        fetch("http://127.0.0.1:5000/attendance/scheduled-today", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+            },
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error("Failed to fetch scheduled employees");
+                }
+                return res.json();
+            })
+            .then((data) => {
+                setScheduledToday(data.employees || []);
+            })
+            .catch((error) => {
+                console.error("Error fetching scheduled employees today:", error);
+                setScheduledToday([]);
+            })
+    }, [authToken, onChange]);
+
+    // todays record
+    const fetchTodayAttendance = async () => {
+        if (!authToken) {
+            toast.error("You are not authenticated");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+            "http://127.0.0.1:5000/attendance/today-records",
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`,
+                },
+            }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch attendance");
+            }
+
+            setAttendanceRecords(data);
+
+        } catch (err) {
+            toast.error(err.message || "Attendance fetch failed");
+        }
+    };
+
+
+
+
+
 
 
     const data = {
@@ -576,9 +779,19 @@ export const EmployeeProvider = ({children}) => {
         updateEmployee,
         getMyEmployeeProfile,
         MyEmployeeProfile,
-        appointments,
+        employeeAppointments,
         startService,
-        completeService
+        completeService,
+        attendance,
+        checkInEmployee,
+        checkOutEmployee,
+        todaySummary,
+        scheduledToday,
+        absentEmployee,
+        fetchTodayAttendance,
+        attendanceRecords,
+        setAttendanceRecords
+        // fetchTodayAttendance
        
     }
 

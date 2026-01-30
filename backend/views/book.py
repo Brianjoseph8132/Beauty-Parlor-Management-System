@@ -824,14 +824,13 @@ def get_booking_details(booking_id):
 @booking_bp.route("/beautician/bookings", methods=["GET"])
 @jwt_required()
 def get_beautician_bookings():
-    current_user_id = get_jwt_identity()
-    user = User.query.get_or_404(current_user_id)
+    user = User.query.get_or_404(get_jwt_identity())
 
-    # Ensure user is a beautician and has an employee record
     if not user.is_beautician:
         return jsonify({"error": "You are not a beautician"}), 403
-    # if not user.employee:
-    #     return jsonify({"error": "No employee record found"}), 403
+
+    if not user.employee:
+        return jsonify({"error": "No employee record found"}), 403
 
     employee_id = user.employee.id
 
@@ -847,7 +846,6 @@ def get_beautician_bookings():
     )
 
     response = []
-
     for booking in bookings:
         response.append({
             "booking": {
@@ -862,17 +860,17 @@ def get_beautician_bookings():
                 "id": booking.service.id,
                 "title": booking.service.title,
                 "duration_minutes": booking.service.duration_minutes,
-                "price": float(booking.service.price)
+                "price": float(booking.service.price),
             },
             "client": {
                 "id": booking.user.id,
                 "username": booking.user.username,
                 "profile_picture": booking.user.profile_picture,
                 "allergies": [
-                    {"id": allergy.id, "name": allergy.name}
-                    for allergy in booking.user.allergies
-                ]
-            }
+                    {"id": a.id, "name": a.name}
+                    for a in booking.user.allergies
+                ],
+            },
         })
 
     return jsonify(response), 200
