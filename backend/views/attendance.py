@@ -31,6 +31,15 @@ def calculate_worked_hours(check_in, check_out):
 
 NAIROBI_TZ = ZoneInfo("Africa/Nairobi")
 
+UTC_TZ = ZoneInfo("UTC")
+
+def to_nairobi(dt):
+    """Convert UTC datetime to Nairobi time (safe)"""
+    if not dt:
+        return None
+    return dt.astimezone(NAIROBI_TZ)
+
+
 @attendance_bp.route("/attendance/check-in/<int:employee_id>", methods=["POST"])
 @jwt_required()
 def check_in(employee_id):
@@ -61,7 +70,7 @@ def check_in(employee_id):
     now_time = now_na.time()  # for comparison
 
     # Salon closed
-    if now_time() < SALON_OPEN:
+    if now_time < SALON_OPEN:
         return jsonify({
             "error": "Salon opens at 8:00 AM"
         }), 400
@@ -95,9 +104,10 @@ def check_in(employee_id):
     return jsonify({
         "message": "Check-in successful",
         "employee": employee.full_name,
-        "check_in": attendance.check_in.isoformat(),
+        "check_in": to_nairobi(attendance.check_in).strftime("%H:%M"),
         "status": attendance.status
     }), 200
+
 
 
 
@@ -153,9 +163,10 @@ def check_out(employee_id):
 
     return jsonify({
         "message": "Check-out successful",
-        "check_out": attendance.check_out.isoformat(),
+        "check_out": to_nairobi(attendance.check_out).strftime("%H:%M"),
         "worked_hours": attendance.worked_hours
     }), 200
+
 
 
 
@@ -238,9 +249,13 @@ def monthly_attendance_report(employee_id):
     ).all()
 
     total_hours = sum(
-        calculate_worked_hours(a.check_in, a.check_out)
+        calculate_worked_hours(
+            to_nairobi(a.check_in),
+            to_nairobi(a.check_out)
+        )
         for a in records
     )
+
 
     summary = db.session.query(
         func.count(Attendance.id).label("total_days"),
@@ -290,9 +305,13 @@ def weekly_attendance_report(employee_id):
     ).all()
 
     total_hours = sum(
-        calculate_worked_hours(a.check_in, a.check_out)
+        calculate_worked_hours(
+            to_nairobi(a.check_in),
+            to_nairobi(a.check_out)
+        )
         for a in records
     )
+
 
     summary = db.session.query(
         func.count(Attendance.id).label("total_days"),
@@ -359,8 +378,14 @@ def get_attendance_records():
             "employee_id": rec.employee_id,
             "employee_name": rec.employee.full_name,
             "date": rec.date.isoformat(),
-            "check_in": rec.check_in.isoformat() if rec.check_in else None,
-            "check_out": rec.check_out.isoformat() if rec.check_out else None,
+            "check_in": (
+                    to_nairobi(rec.check_in).strftime("%H:%M")
+                    if rec.check_in else None
+                ),
+            "check_out": (
+                to_nairobi(rec.check_out).strftime("%H:%M")
+                if rec.check_out else None
+            ),
             "status": rec.status,
             "worked_hours": rec.worked_hours or 0
         })
@@ -379,35 +404,29 @@ def get_attendance_records():
 def attendance_today_summary():
     user = User.query.get(get_jwt_identity())
 
-    # Check if user is admin OR receptionist
+    # Only admin or receptionist
     if not (user.is_admin or user.is_receptionist):
         return jsonify({"error": "Access denied"}), 403
 
-    today = date.today()
-    now = datetime.now().time()
+    today = datetime.now(NAIROBI_TZ).date()
+    now = datetime.now(NAIROBI_TZ).time()
 
-    # 1. Active employees
-    employees = Employee.query.filter(Employee._is_active.is_(True)).all()
+    # 1. Get all employees (active + inactive)
+    employees = Employee.query.all()
 
-    # 2. Scheduled today
-    scheduled_today = [
-        e for e in employees if is_employee_working_today(e, today)
-    ]
+    # 2. Employees scheduled today
+    scheduled_today = [e for e in employees if is_employee_working_today(e, today)]
     scheduled_ids = {e.id for e in scheduled_today}
 
-    # 3. Attendance records today
-    attendance_records = Attendance.query.filter_by(date=today).all()
+    # 3. Fetch today's attendance records
+    attendance_records = {a.employee_id: a for a in Attendance.query.filter_by(date=today).all()}
 
-    checked_in_ids = {
-        a.employee_id for a in attendance_records if a.check_in
-    }
-
+    checked_in_ids = {eid for eid, a in attendance_records.items() if a.check_in}
     present_today = len(checked_in_ids)
 
     pending_check_in = 0
     absent_today = 0
 
-    # 4. Split pending vs absent using work_end
     for employee in scheduled_today:
         if employee.id not in checked_in_ids:
             if now < employee.work_end:
@@ -417,13 +436,11 @@ def attendance_today_summary():
 
     return jsonify({
         "date": today.isoformat(),
-        "scheduled_today": len(scheduled_ids),
+        "scheduled_today_count": len(scheduled_ids),
         "present_today": present_today,
         "pending_check_in": pending_check_in,
         "absent_today": absent_today
     }), 200
-
-
 
 
 
@@ -436,20 +453,19 @@ def get_scheduled_employees_today():
     # Admin or receptionist only
     if not (user.is_admin or user.is_receptionist):
         return jsonify({"error": "Access denied"}), 403
-    
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
 
     today = date.today()
     weekday = today.weekday()  # 0 = Monday
 
-    # 1. Get active employees only
-    employees = Employee.query.filter(Employee._is_active.is_(True)).all()
+    # 1. Get ALL employees (active + inactive)
+    employees = Employee.query.all()
 
     # 2. Filter employees scheduled today
     scheduled_today = []
     for employee in employees:
+        if not employee.work_days:
+            continue
+
         work_days = [int(d) for d in employee.work_days.split(",")]
         if weekday in work_days:
             scheduled_today.append(employee)
@@ -463,7 +479,7 @@ def get_scheduled_employees_today():
             "username": employee.user.username,
             "full_name": employee.full_name,
             "employee_profile_picture": employee.employee_profile_picture,
-            "is_active": employee.is_active,  # hybrid property
+            "is_active": employee.is_active, 
             "work_start": employee.work_start.strftime("%H:%M"),
             "work_end": employee.work_end.strftime("%H:%M"),
         })
@@ -485,10 +501,10 @@ def get_today_attendance_records():
     if not (user.is_admin or user.is_receptionist):
         return jsonify({"error": "Access denied"}), 403
 
-    # Use LOCAL time (Kenya)
-    tz = ZoneInfo("Africa/Nairobi")
-    today = date.today()
-    now = datetime.now(tz=tz).time()
+
+    now_na = datetime.now(NAIROBI_TZ)
+    today = now_na.date()
+    now = now_na.time()
 
     # 1. Get active employees
     employees = Employee.query.filter(Employee._is_active.is_(True)).all()
@@ -498,7 +514,7 @@ def get_today_attendance_records():
         e for e in employees if is_employee_working_today(e, today)
     ]
 
-    # 3. Fetch today's attendance records once
+    # 3. Fetch today's attendance records (UTC stored, date is local)
     attendance_records = {
         a.employee_id: a
         for a in Attendance.query.filter_by(date=today).all()
@@ -518,30 +534,31 @@ def get_today_attendance_records():
             else:
                 ui_status = "pending"
         else:
-            # If no record exists and work hours are over → absent
-            ui_status = "absent" if now > employee.work_end else "pending"
+            work_end_dt = datetime.combine(today, employee.work_end, tzinfo=NAIROBI_TZ)
+            ui_status = "absent" if now_na > work_end_dt else "pending"
+
 
         data[str(employee.id)] = {
             "employeeId": employee.id,
             "employeeName": employee.full_name,
             "username": employee.user.username,
 
-            # Times formatted for UI
+            # Convert UTC → Nairobi for UI
             "checkIn": (
-                record.check_in.astimezone(tz).strftime("%H:%M")
+                record.check_in.astimezone(NAIROBI_TZ).strftime("%H:%M")
                 if record and record.check_in
                 else None
             ),
             "checkOut": (
-                record.check_out.astimezone(tz).strftime("%H:%M")
+                record.check_out.astimezone(NAIROBI_TZ).strftime("%H:%M")
                 if record and record.check_out
                 else None
             ),
 
-            # UI state (what buttons show)
+            # UI logic
             "status": ui_status,
 
-            # Backend truth (Present / Late / Absent)
+            # Backend truth
             "backendStatus": record.status if record else None,
 
             "workedHours": record.worked_hours if record else 0,

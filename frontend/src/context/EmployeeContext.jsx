@@ -14,7 +14,7 @@ export const EmployeeProvider = ({children}) => {
     const [allergies, setAllergies] = useState([]);
     const [upcomingAppointments, setUpcomingAppointments] = useState([]);
     const [employees, setEmployees] = useState([]);
-    const [employeeAppointments, setEmployeeAppointmnets] = useState([]);
+    const [employeeAppointments, setEmployeeAppointments] = useState([]);
     const [attendance, setAttendance] = useState([])
     const [todaySummary, setTodaySummary] = useState(null);
     const [scheduledToday, setScheduledToday] = useState([]);
@@ -430,11 +430,11 @@ export const EmployeeProvider = ({children}) => {
             })
             .then((data) => {
                 // data is an ARRAY
-                setEmployeeAppointmnets(Array.isArray(data) ? data : []);
+                setEmployeeAppointments(Array.isArray(data) ? data : []);
             })
             .catch((error) => {
                 console.error("Error fetching appointments:", error);
-                setAppointments([]); // prevent stale UI
+               
             });
     }, [authToken, onChange]);
 
@@ -685,11 +685,11 @@ export const EmployeeProvider = ({children}) => {
         if (!authToken) return;
 
         fetch("http://127.0.0.1:5000/attendance/today-summary", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${authToken}`,
-            },
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+        },
         })
         .then((res) => res.json())
         .then((data) => {
@@ -698,8 +698,7 @@ export const EmployeeProvider = ({children}) => {
         .catch((error) =>
             console.error("Error fetching attendance summary:", error)
         );
-    }, [authToken, onChange]);
-
+    }, [authToken,onChange]);
 
 
     // Employees scheduled today

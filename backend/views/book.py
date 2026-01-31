@@ -826,8 +826,8 @@ def get_booking_details(booking_id):
 def get_beautician_bookings():
     user = User.query.get_or_404(get_jwt_identity())
 
-    if not user.is_beautician:
-        return jsonify({"error": "You are not a beautician"}), 403
+    if not (user.is_beautician or user.is_admin or user.is_receptionist):
+        return jsonify({"error": "Access denied"}), 403
 
     if not user.employee:
         return jsonify({"error": "No employee record found"}), 403
@@ -845,32 +845,30 @@ def get_beautician_bookings():
         .all()
     )
 
-    response = []
-    for booking in bookings:
-        response.append({
+    response = [
+        {
             "booking": {
-                "id": booking.id,
-                "date": booking.booking_date.isoformat(),
-                "start_time": booking.start_time.strftime("%H:%M"),
-                "end_time": booking.end_time.strftime("%H:%M"),
-                "status": booking.status,
-                "price": float(booking.price),
+                "id": b.id,
+                "date": b.booking_date.isoformat(),
+                "start_time": b.start_time.strftime("%H:%M") if b.start_time else None,
+                "end_time": b.end_time.strftime("%H:%M") if b.end_time else None,
+                "status": b.status,
+                "price": float(b.price or 0),
             },
             "service": {
-                "id": booking.service.id,
-                "title": booking.service.title,
-                "duration_minutes": booking.service.duration_minutes,
-                "price": float(booking.service.price),
+                "id": b.service.id,
+                "title": b.service.title,
+                "duration_minutes": b.service.duration_minutes,
+                "price": float(b.service.price or 0),
             },
             "client": {
-                "id": booking.user.id,
-                "username": booking.user.username,
-                "profile_picture": booking.user.profile_picture,
-                "allergies": [
-                    {"id": a.id, "name": a.name}
-                    for a in booking.user.allergies
-                ],
+                "id": b.user.id,
+                "username": b.user.username,
+                "profile_picture": b.user.profile_picture,
+                "allergies": [{"id": a.id, "name": a.name} for a in (b.user.allergies or [])],
             },
-        })
+        }
+        for b in bookings
+    ]
 
     return jsonify(response), 200

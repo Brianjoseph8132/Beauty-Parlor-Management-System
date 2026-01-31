@@ -148,7 +148,7 @@ const EmployeeAttendance = () => {
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
             <h3 className="text-3xl font-bold text-[#272727] mb-1">
-              {todaySummary.scheduled_today}
+              {todaySummary?.scheduled_today_count || 0}
             </h3>
             <p className="text-sm text-[#272727]/60">Total Active Employees</p>
           </div>
@@ -161,7 +161,7 @@ const EmployeeAttendance = () => {
               </div>
             </div>
             <h3 className="text-3xl font-bold text-[#272727] mb-1">
-              {todaySummary.present_today}
+              {todaySummary?.present_today || 0}
             </h3>
             <p className="text-sm text-[#272727]/60">Present Today</p>
           </div>
@@ -173,7 +173,7 @@ const EmployeeAttendance = () => {
                 <XCircle className="w-6 h-6 text-red-500" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-[#272727] mb-1">{todaySummary.absent_today}</h3>
+            <h3 className="text-3xl font-bold text-[#272727] mb-1">{todaySummary?.absent_today || 0}</h3>
             <p className="text-sm text-[#272727]/60">Absent Today</p>
           </div>
 
@@ -184,7 +184,7 @@ const EmployeeAttendance = () => {
                 <AlertCircle className="w-6 h-6 text-yellow-500" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-[#272727] mb-1">{todaySummary.pending_check_in}</h3>
+            <h3 className="text-3xl font-bold text-[#272727] mb-1">{todaySummary?.pending_check_in || 0}</h3>
             <p className="text-sm text-[#272727]/60">Pending Check-in</p>
           </div>
         </motion.div>
